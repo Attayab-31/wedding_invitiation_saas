@@ -84,49 +84,49 @@ export function EnvelopeModel({
     ctx.fillText('بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ', 512, 105);
 
     // Family invitation lead
-    ctx.font = '300 18px "Times New Roman", serif';
-    ctx.fillStyle = '#6B4F35';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('TOGETHER WITH THEIR FAMILIES', 512, 165);
+    ctx.font = '300 16px "Times New Roman", serif';
+    ctx.fillStyle = '#6B4E3D';
+    ctx.fillText('TOGETHER WITH THEIR FAMILIES', 512, 160);
 
     // Couple Names
-    ctx.font = 'bold 44px Georgia, serif';
+    ctx.font = 'bold 46px Georgia, serif';
     ctx.fillStyle = '#3A0715';
-    ctx.fillText(coupleNames || 'Ahad & Maryam', 512, 235);
+    ctx.fillText(coupleNames || 'Ahad & Maryam', 512, 230);
 
-    ctx.font = 'italic 20px Georgia, serif';
+    ctx.font = 'italic 19px Georgia, serif';
     ctx.fillStyle = '#8C6D3B';
-    ctx.fillText('Request the honour of your presence to celebrate their wedding', 512, 290);
+    ctx.fillText('Request the honour of your gracious presence', 512, 285);
 
     // Decorative gold separator line
     ctx.strokeStyle = '#C5A15A';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(340, 325);
-    ctx.lineTo(684, 325);
+    ctx.moveTo(340, 320);
+    ctx.lineTo(684, 320);
     ctx.stroke();
 
     // Prominent Guest Personalized Name
-    ctx.font = 'italic 300 22px Georgia, serif';
-    ctx.fillStyle = '#580F25';
-    ctx.fillText('Especially Invited', 512, 375);
+    ctx.font = '300 16px "Times New Roman", serif';
+    ctx.fillStyle = '#8C6D3B';
+    ctx.fillText('ESPECIALLY INVITED', 512, 365);
 
-    ctx.font = 'bold 40px Georgia, serif';
+    ctx.font = 'bold 38px Georgia, serif';
     ctx.fillStyle = '#3A0715';
-    ctx.fillText(guestName || 'Honoured Guest', 512, 435);
+    ctx.fillText(guestName || 'Honoured Guest', 512, 420);
 
     // Gold accent frame around guest name
-    ctx.strokeStyle = 'rgba(197, 161, 90, 0.6)';
-    ctx.strokeRect(220, 395, 584, 58);
+    ctx.strokeStyle = 'rgba(197, 161, 90, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(220, 380, 584, 58);
 
-    // Date & Venue prompt
-    ctx.font = '400 18px "Times New Roman", serif';
-    ctx.fillStyle = '#554133';
-    ctx.fillText('DECEMBER 2026 • LAHORE, PAKISTAN', 512, 535);
+    // Date & Venue
+    ctx.font = '400 16px "Times New Roman", serif';
+    ctx.fillStyle = '#6B4E3D';
+    ctx.fillText('DECEMBER 2026 • LAHORE, PAKISTAN', 512, 510);
 
     ctx.font = 'italic 16px Georgia, serif';
     ctx.fillStyle = '#8C6D3B';
-    ctx.fillText('Scroll down for function details & RSVP', 512, 580);
+    ctx.fillText('Awaiting the pleasure of celebrating with you', 512, 555);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;

@@ -26,19 +26,15 @@ export function HeroEnvelopeScene({
 
       {/* Header Monogram & Subtitle */}
       <div className="relative z-10 text-center pt-2">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#B88E3E]/40 bg-[#FFFDF9]/90 backdrop-blur-md shadow-sm mb-2.5">
-          <Sparkles className="w-3.5 h-3.5 text-[#B88E3E]" />
-          <span className="text-xs uppercase tracking-[0.25em] text-[#580F25] font-royal font-bold">
-            The Royal Wedding Celebration
-          </span>
-          <Sparkles className="w-3.5 h-3.5 text-[#B88E3E]" />
-        </div>
+        <span className="text-[11px] uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-bold block mb-1.5">
+          Wedding Invitation
+        </span>
         <h1 className="text-3xl md:text-5xl font-royal font-bold text-burgundy-gradient tracking-wide">
           {coupleNames}
         </h1>
         <p className="text-sm md:text-base font-serif italic text-[#6B4E3D] mt-1">
-          A bespoke ceremonial invitation crafted for{' '}
-          <span className="font-bold text-[#3A0715] not-italic underline decoration-[#B88E3E]/60 underline-offset-4">
+          Bespoke invitation for{' '}
+          <span className="font-bold text-[#3A0715] not-italic">
             {guestName}
           </span>
         </p>
@@ -55,25 +51,20 @@ export function HeroEnvelopeScene({
       </div>
 
       {/* Bottom Area: Gated by isOpen */}
-      <div className="relative z-10 text-center pb-4 transition-all duration-700 min-h-[72px] flex items-center justify-center">
+      <div className="relative z-10 text-center pb-4 transition-all duration-700 min-h-[64px] flex items-center justify-center">
         {isOpen ? (
-          <div className="flex flex-col items-center gap-2 animate-fadeIn">
+          <div className="flex flex-col items-center gap-1.5 animate-fadeIn">
             <button
               onClick={onProceed}
-              className="flex items-center gap-2 px-7 py-3 rounded-full bg-gradient-to-r from-[#580F25] via-[#4A081A] to-[#3A0715] text-[#FAF7F2] font-royal font-bold text-xs md:text-sm uppercase tracking-widest shadow-[0_8px_25px_rgba(58,7,21,0.25)] hover:shadow-[0_10px_35px_rgba(184,142,62,0.35)] hover:scale-105 active:scale-95 transition-all cursor-pointer border border-[#DFCA94]"
+              className="flex items-center gap-2 px-8 py-3 rounded-full bg-[#580F25] hover:bg-[#45091C] text-[#FAF7F2] font-royal font-bold text-xs uppercase tracking-[0.2em] shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer border border-[#DFCA94]"
             >
-              <span>Explore Wedding Festivities &amp; RSVP</span>
-              <ArrowDown className="w-4 h-4 text-[#DFCA94] animate-bounce" />
+              <span>View Wedding Functions &amp; RSVP</span>
+              <ArrowDown className="w-3.5 h-3.5 text-[#DFCA94]" />
             </button>
-            <span className="text-[11px] text-[#6B4E3D] font-serif italic">
-              Scroll down to discover function schedules, venues, and submit your RSVP
-            </span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#8C6D3B] font-royal">
-            <Sparkles className="w-3.5 h-3.5 text-[#B88E3E]" />
-            <span>Invitation Sealed • Tap the Monogram to Open</span>
-            <Sparkles className="w-3.5 h-3.5 text-[#B88E3E]" />
+          <div className="text-[11px] uppercase tracking-[0.2em] text-[#8C6D3B] font-royal font-medium">
+            Touch the Royal Seal to Unseal
           </div>
         )}
       </div>

@@ -21,14 +21,14 @@ export default async function AdminOverviewPage() {
       {/* Welcome Banner */}
       <div className="mughal-border rounded-xl bg-gradient-to-r from-[#2B0610] via-[#3A0715] to-[#1D040A] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <span className="text-xs uppercase tracking-widest text-[#C5A15A] font-royal font-semibold">
+          <span className="text-xs uppercase tracking-widest text-[#DFCA94] font-royal font-semibold">
             Wedding Administration
           </span>
           <h1 className="text-2xl md:text-3xl font-royal font-bold text-gold-gradient mt-1">
             {wedding.title}
           </h1>
           <p className="text-xs text-[#E6D2A0]/80 font-serif italic mt-1">
-            Mughal-grade encryption • Dynamic 3D envelope kinematics • Function-level RSVP control
+            Personalized guest invitations • Function access controls • Real-time RSVP tracking
           </p>
         </div>
 

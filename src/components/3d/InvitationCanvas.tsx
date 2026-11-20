@@ -109,17 +109,15 @@ export function InvitationCanvas({
 
         {/* Seal Interaction Call-To-Action Overlay */}
         {!isOpen && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-2">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-2">
             <button
               onClick={onOpen}
-              className="pointer-events-auto flex items-center gap-2 px-7 py-3 rounded-full bg-gradient-to-r from-[#4A0A1C] via-[#630F28] to-[#4A0A1C] border-2 border-[#DFCA94] text-[#FAF7F2] shadow-[0_10px_30px_rgba(58,7,21,0.35)] hover:shadow-[0_12px_40px_rgba(184,142,62,0.4)] hover:scale-105 active:scale-95 transition-all text-xs md:text-sm font-royal font-bold tracking-widest uppercase cursor-pointer"
+              className="pointer-events-auto flex items-center gap-2.5 px-8 py-3 rounded-full bg-[#580F25] hover:bg-[#45091C] border border-[#DFCA94] text-[#FAF7F2] shadow-[0_8px_25px_rgba(58,7,21,0.25)] hover:scale-105 active:scale-95 transition-all text-xs font-royal font-bold tracking-[0.2em] uppercase cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-[#DFCA94] animate-pulse" />
-              <span>Tap Royal Wax Seal to Open</span>
-              <Sparkles className="w-4 h-4 text-[#DFCA94] animate-pulse" />
+              <span>Tap the Wax Seal to Open</span>
             </button>
-            <p className="text-xs text-[#580F25] font-serif italic tracking-wide bg-[#FAF7F2]/90 px-3 py-0.5 rounded-full shadow-sm border border-[#B88E3E]/30">
-              Click the monogram seal or button to unseal your invitation
+            <p className="text-xs text-[#6B4E3D] font-serif italic tracking-wide bg-[#FFFDF9]/90 px-3.5 py-1 rounded-full border border-[#B88E3E]/20 shadow-sm">
+              An exclusive invitation presented for {guestName}
             </p>
           </div>
         )}
