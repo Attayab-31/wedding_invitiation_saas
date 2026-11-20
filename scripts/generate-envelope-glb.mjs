@@ -82,7 +82,7 @@ envelopeGroup.add(envelopeLining);
 const pocketGeometry = new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, 0.02);
 const pocket = new THREE.Mesh(pocketGeometry, envelopePaperMaterial);
 pocket.name = 'Envelope_Pocket';
-pocket.position.set(0, -bodyHeight * 0.225, 0.03);
+pocket.position.set(0, -bodyHeight * 0.225, 0.07);
 envelopeGroup.add(pocket);
 
 // Left Fold triangle

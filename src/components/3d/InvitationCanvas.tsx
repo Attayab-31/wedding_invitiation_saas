@@ -1,17 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, Component, ErrorInfo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useState, useEffect, useRef, useCallback, Suspense, Component, ErrorInfo } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import gsap from 'gsap';
 import { Lighting } from './Lighting';
 import { PetalsInstanced } from './PetalsInstanced';
 import { GoldDust } from './GoldDust';
 import { EnvelopeModel } from './EnvelopeModel';
 import { WebGLFallback } from './WebGLFallback';
-import { Sparkles } from 'lucide-react';
 
 interface InvitationCanvasProps {
   isOpen: boolean;
+  isDiving: boolean;
   onOpen: () => void;
+  onDiveComplete: () => void;
   guestName: string;
   coupleNames: string;
 }
@@ -42,9 +45,96 @@ class CanvasErrorBoundary extends Component<
   }
 }
 
+// Orchestrates the cinematic camera dive towards the nested invitation cards inside the envelope
+function CameraController({
+  isDiving,
+  isOpen,
+  onDiveComplete,
+}: {
+  isDiving: boolean;
+  isOpen: boolean;
+  onDiveComplete: () => void;
+}) {
+  const { camera, size } = useThree();
+  const isAnimating = useRef(false);
+
+  // Compute responsive baseline camera distance
+  const getBaseZ = useCallback(() => {
+    const aspect = size.width / Math.max(1, size.height);
+    if (aspect < 1.25) {
+      return Math.max(6.6, 2.25 / (Math.tan(((camera as THREE.PerspectiveCamera).fov * Math.PI) / 360) * aspect));
+    }
+    return 6.6;
+  }, [camera, size.width, size.height]);
+
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+
+    if (isDiving) {
+      isAnimating.current = true;
+
+      // Cinematic Camera Dive:
+      // Flap swings open, revealing layered cards nestled inside the pocket, then camera swoops right into the card suite
+      const tl = gsap.timeline();
+
+      tl.to(camera.position, {
+        x: 0,
+        y: 0.22,
+        z: 2.05,
+        duration: 1.35,
+        ease: 'power2.inOut',
+        delay: 0.65,
+        onComplete: () => {
+          isAnimating.current = false;
+          onDiveComplete();
+        },
+      });
+
+      tl.to(camera.rotation, {
+        x: -0.02,
+        y: 0,
+        z: 0,
+        duration: 1.35,
+        ease: 'power2.inOut',
+      }, '<');
+    } else if (!isDiving && isOpen) {
+      // Reversible smooth glide back out when returning from deck to envelope view
+      const baseZ = getBaseZ();
+      gsap.to(camera.position, {
+        x: 0,
+        y: 0.05,
+        z: baseZ,
+        duration: 1.1,
+        ease: 'power2.out',
+      });
+      gsap.to(camera.rotation, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 1.1,
+        ease: 'power2.out',
+      });
+    }
+  }, [isDiving, isOpen, camera, onDiveComplete, getBaseZ]);
+
+  // Adjust camera distance when browser window resizes
+  useEffect(() => {
+    if (camera instanceof THREE.PerspectiveCamera && !isDiving && !isAnimating.current) {
+      const baseZ = getBaseZ();
+      camera.position.z = baseZ;
+      camera.position.y = 0.05;
+      camera.updateProjectionMatrix();
+    }
+  }, [size.width, size.height, camera, isDiving, getBaseZ]);
+
+  return null;
+}
+
 export function InvitationCanvas({
   isOpen,
+  isDiving,
   onOpen,
+  onDiveComplete,
   guestName,
   coupleNames,
 }: InvitationCanvasProps) {
@@ -67,12 +157,14 @@ export function InvitationCanvas({
         onOpen={onOpen}
         guestName={guestName}
         coupleNames={coupleNames}
+        isDiving={isDiving}
+        onDiveComplete={onDiveComplete}
       />
     );
   }
 
   return (
-    <div className="relative w-full h-[520px] md:h-[620px] max-w-4xl mx-auto flex items-center justify-center">
+    <div className="relative w-full h-full flex items-center justify-center">
       <CanvasErrorBoundary
         fallback={
           <WebGLFallback
@@ -80,6 +172,8 @@ export function InvitationCanvas({
             onOpen={onOpen}
             guestName={guestName}
             coupleNames={coupleNames}
+            isDiving={isDiving}
+            onDiveComplete={onDiveComplete}
           />
         }
       >
@@ -91,9 +185,14 @@ export function InvitationCanvas({
             powerPreference: 'high-performance',
           }}
           dpr={[1, 1.75]}
-          camera={{ position: [0, 0, 5.8], fov: 42 }}
-          className="cursor-grab active:cursor-grabbing"
+          camera={{ position: [0, 0.05, 6.6], fov: 42 }}
+          className="cursor-grab active:cursor-grabbing w-full h-full"
         >
+          <CameraController
+            isDiving={isDiving}
+            isOpen={isOpen}
+            onDiveComplete={onDiveComplete}
+          />
           <Suspense fallback={null}>
             <Lighting />
             <PetalsInstanced count={42} />
@@ -103,24 +202,10 @@ export function InvitationCanvas({
               onOpen={onOpen}
               guestName={guestName}
               coupleNames={coupleNames}
+              isDiving={isDiving}
             />
           </Suspense>
         </Canvas>
-
-        {/* Seal Interaction Call-To-Action Overlay */}
-        {!isOpen && (
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-2">
-            <button
-              onClick={onOpen}
-              className="pointer-events-auto flex items-center gap-2.5 px-8 py-3 rounded-full bg-[#580F25] hover:bg-[#45091C] border border-[#DFCA94] text-[#FAF7F2] shadow-[0_8px_25px_rgba(58,7,21,0.25)] hover:scale-105 active:scale-95 transition-all text-xs font-royal font-bold tracking-[0.2em] uppercase cursor-pointer"
-            >
-              <span>Tap the Wax Seal to Open</span>
-            </button>
-            <p className="text-xs text-[#6B4E3D] font-serif italic tracking-wide bg-[#FFFDF9]/90 px-3.5 py-1 rounded-full border border-[#B88E3E]/20 shadow-sm">
-              An exclusive invitation presented for {guestName}
-            </p>
-          </div>
-        )}
       </CanvasErrorBoundary>
     </div>
   );

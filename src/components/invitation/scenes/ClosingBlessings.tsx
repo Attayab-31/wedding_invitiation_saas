@@ -2,9 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Wedding } from '@/types/database';
-import { Heart } from 'lucide-react';
+import { Heart, RotateCcw } from 'lucide-react';
 
-export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
+interface ClosingBlessingsProps {
+  wedding: Wedding;
+  onRevisitEnvelope?: () => void;
+}
+
+export function ClosingBlessings({ wedding, onRevisitEnvelope }: ClosingBlessingsProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -38,14 +43,14 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
   }, [wedding.wedding_date]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-8 text-center">
-      {/* Countdown Card */}
-      <div className="stationery-card gold-corners p-8 rounded-2xl shadow-xl">
-        <span className="text-[11px] uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-bold block mb-4">
+    <div className="w-full max-w-2xl mx-auto stationery-card gold-corners p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl text-center flex flex-col justify-between max-h-[78dvh] overflow-hidden">
+      {/* Celebration Countdown */}
+      <div className="shrink-0">
+        <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-bold block mb-2 sm:mb-3">
           Celebration Countdown
         </span>
 
-        <div className="grid grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {[
             { label: 'Days', value: timeLeft.days },
             { label: 'Hours', value: timeLeft.hours },
@@ -54,12 +59,12 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
           ].map((item) => (
             <div
               key={item.label}
-              className="p-3 md:p-4 rounded-xl bg-[#FAF7F2] border border-[#B88E3E]/25 flex flex-col items-center"
+              className="p-2 sm:p-3 rounded-xl bg-[#FAF7F2] border border-[#B88E3E]/25 flex flex-col items-center"
             >
-              <span className="text-2xl md:text-4xl font-royal font-bold text-burgundy-gradient">
+              <span className="text-xl sm:text-2xl md:text-3xl font-royal font-bold text-burgundy-gradient">
                 {item.value}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold mt-1">
+              <span className="text-[9px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold mt-0.5">
                 {item.label}
               </span>
             </div>
@@ -68,25 +73,40 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
       </div>
 
       {/* Sincere Family Blessing */}
-      <div className="space-y-3 pt-2">
-        <div className="inline-flex items-center justify-center text-[#B88E3E]">
+      <div className="my-2 sm:my-3 shrink-0">
+        <div className="inline-flex items-center justify-center text-[#B88E3E] mb-1">
           <Heart className="w-4 h-4 fill-[#B88E3E]" />
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-royal font-bold text-burgundy-gradient">
+        <h3 className="text-xl sm:text-2xl md:text-3xl font-royal font-bold text-burgundy-gradient">
           We Await Your Gracious Presence
         </h3>
 
-        <p className="font-serif italic text-sm md:text-base text-[#6B4E3D] max-w-lg mx-auto leading-relaxed">
+        <p className="font-serif italic text-xs sm:text-sm text-[#6B4E3D] max-w-md mx-auto mt-1 leading-relaxed">
           &ldquo;May our gathering be blessed with warmth, joyful memories, and your sincere prayers for our life ahead.&rdquo;
         </p>
+      </div>
 
-        <p className="text-xs uppercase tracking-widest text-[#8C6D3B] font-royal pt-2 font-bold">
+      {/* Family Signature & Revisit Envelope Button */}
+      <div className="pt-2 border-t border-[#B88E3E]/20 shrink-0">
+        <p className="text-[10px] uppercase tracking-widest text-[#8C6D3B] font-royal font-bold">
           With Warmest Regards,
-          <span className="block text-base text-[#3A0715] font-serif normal-case mt-0.5 font-bold">
-            The Khan &amp; Raza Families
+          <span className="block text-sm sm:text-base text-[#3A0715] font-serif normal-case mt-0.5 font-bold">
+            {wedding.host_names}
           </span>
         </p>
+
+        {onRevisitEnvelope && (
+          <div className="mt-3">
+            <button
+              onClick={onRevisitEnvelope}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FAF7F2] border border-[#B88E3E]/40 text-[#580F25] text-xs font-royal font-bold hover:bg-[#F3ECE0] transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Revisit 3D Envelope</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -48,8 +48,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${cormorant.variable} ${cinzel.variable} ${montserrat.variable} ${script.variable} h-full scroll-smooth`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full bg-[#FAF7F2] text-[#231713] antialiased selection:bg-[#B88E3E] selection:text-white">
+      <body
+        className="min-h-full bg-[#FAF7F2] text-[#231713] antialiased selection:bg-[#B88E3E] selection:text-white"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

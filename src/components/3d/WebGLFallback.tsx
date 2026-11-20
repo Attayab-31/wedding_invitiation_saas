@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface WebGLFallbackProps {
   isOpen: boolean;
   onOpen: () => void;
   guestName: string;
   coupleNames: string;
+  isDiving?: boolean;
+  onDiveComplete?: () => void;
 }
 
 export function WebGLFallback({
@@ -14,58 +16,59 @@ export function WebGLFallback({
   onOpen,
   guestName,
   coupleNames,
+  onDiveComplete,
 }: WebGLFallbackProps) {
+  useEffect(() => {
+    if (isOpen && onDiveComplete) {
+      const timer = setTimeout(() => {
+        onDiveComplete();
+      }, 1400);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onDiveComplete]);
+
   return (
     <div className="relative w-full max-w-lg mx-auto aspect-[4/3] flex items-center justify-center p-4">
       {/* Outer Envelope Wrapper */}
-      <div className="relative w-full h-full bg-[#4A0A1C] rounded-2xl shadow-2xl border-2 border-[#B88E3E]/60 overflow-hidden flex flex-col items-center justify-center">
-        
-        {/* Interior Pocket Background with Gold Foil Rim */}
-        <div className="absolute inset-3 bg-[#320612] rounded-xl shadow-inner border border-[#B88E3E]/30" />
+      <div
+        onClick={onOpen}
+        className="relative w-full h-full bg-[#4A0A1C] rounded-2xl shadow-2xl border-2 border-[#B88E3E]/60 overflow-hidden flex flex-col items-center justify-center cursor-pointer"
+      >
+        {/* Interior Pocket Background with Champagne Gold Foil Lining */}
+        <div className="absolute inset-3 bg-gradient-to-tr from-[#320612] via-[#DFCA94]/30 to-[#B88E3E]/40 rounded-xl shadow-inner border border-[#B88E3E]/50" />
 
-        {/* Sliding Invitation Card */}
+        {/* Layer 1: Secondary Gold-Edged Function Card (Nestled inside pocket) */}
         <div
-          className={`absolute w-[88%] h-[84%] bg-[#FFFDF9] rounded-xl shadow-2xl border-2 border-[#B88E3E] p-6 text-center transition-all duration-1000 ease-out z-10 ${
-            isOpen
-              ? '-translate-y-28 scale-105 shadow-[0_20px_50px_rgba(58,7,21,0.25)] ring-2 ring-[#B88E3E]'
-              : 'translate-y-4 scale-95 opacity-90'
+          className={`absolute w-[86%] h-[72%] bg-gradient-to-br from-[#DFCA94] to-[#B88E3E] rounded-xl shadow-md border border-[#C5A15A] p-4 text-center transition-all duration-700 ease-out z-10 -rotate-1 ${
+            isOpen ? '-translate-y-6' : 'translate-y-2 opacity-90'
+          }`}
+        />
+
+        {/* Layer 2: Main Ivory Invitation Card (Nestled inside pocket, peeking out) */}
+        <div
+          className={`absolute w-[86%] h-[72%] bg-[#FFFDF9] rounded-xl shadow-xl border-2 border-[#B88E3E] p-4 text-center transition-all duration-700 ease-out z-10 ${
+            isOpen ? '-translate-y-4' : 'translate-y-4 opacity-90'
           }`}
         >
           {/* Gold Decorative Corner Brackets */}
-          <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-[#B88E3E]" />
-          <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-[#B88E3E]" />
-          <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-[#B88E3E]" />
-          <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-[#B88E3E]" />
+          <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-[#B88E3E]" />
+          <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-[#B88E3E]" />
 
-          <p className="text-xs text-[#580F25] font-serif italic mb-1">
+          <p className="text-[10px] text-[#580F25] font-serif italic mb-0.5">
             بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
           </p>
-          <p className="text-[10px] tracking-[0.25em] uppercase text-[#8C6D3B] font-royal font-semibold mb-2">
+          <p className="text-[8px] tracking-[0.25em] uppercase text-[#8C6D3B] font-royal font-semibold mb-1">
             Together With Their Families
           </p>
-          <h3 className="text-2xl md:text-3xl font-royal font-bold text-[#3A0715] mb-1">
+          <h3 className="text-lg md:text-xl font-royal font-bold text-[#3A0715] mb-0.5">
             {coupleNames}
           </h3>
-          <p className="text-xs text-[#6B4E3D] font-serif italic mb-3">
-            Request the honour of your presence to celebrate their wedding
-          </p>
-
-          {/* Guest Name in Gold Border Box */}
-          <div className="my-2 py-2 px-4 border border-[#B88E3E] bg-[#FAF7F2] rounded-lg shadow-sm">
-            <span className="block text-[9px] text-[#8C6D3B] uppercase tracking-widest font-royal font-medium">
-              Especially Invited
-            </span>
-            <span className="text-lg md:text-xl font-serif font-bold text-[#3A0715]">
-              {guestName}
-            </span>
-          </div>
-
-          <p className="text-[10px] text-[#8C6D3B] tracking-wider uppercase mt-2 font-royal">
-            December 2026 • Lahore, Pakistan
+          <p className="text-[9px] text-[#6B4E3D] font-serif italic">
+            Request the honour of your gracious presence
           </p>
         </div>
 
-        {/* Envelope Lower Pocket Fold */}
+        {/* Envelope Lower Pocket Fold (Covers lower half of cards so they sit inside pocket) */}
         <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-[#3A0715] via-[#4A0A1C] to-[#580F25] border-t border-[#B88E3E]/40 z-20 shadow-lg pointer-events-none" />
 
         {/* Articulated Flap */}
@@ -90,9 +93,6 @@ export function WebGLFallback({
                 A &amp; M
               </span>
             </div>
-            <span className="absolute -bottom-7 text-[10px] tracking-wider uppercase text-[#3A0715] font-royal font-bold whitespace-nowrap bg-[#FAF7F2] px-2.5 py-0.5 rounded-full shadow border border-[#B88E3E]/60">
-              Tap to Unseal
-            </span>
           </button>
         )}
       </div>
