@@ -183,7 +183,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
     });
     return new THREE.CatmullRomCurve3(points);
   }, []);
-  const archZ = -13 - index * 6;
+  const archZ = -16 - index * 6;
 
   return (
     <group position={[0, 0, archZ]}>
@@ -234,10 +234,12 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
 function SkyLantern({
   active,
   position,
+  scale,
   startTimeRef,
 }: {
   active: boolean;
   position: [number, number, number];
+  scale: number;
   startTimeRef: React.RefObject<number | null>;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -247,7 +249,7 @@ function SkyLantern({
     if (!groupRef.current || !active) return;
     if (startTimeRef.current === null) startTimeRef.current = clock.elapsedTime;
     const elapsed = clock.elapsedTime - startTimeRef.current;
-    groupRef.current.position.y = position[1] + Math.min(elapsed * 0.12, 1.1);
+    groupRef.current.position.y = position[1] + Math.min(elapsed * 0.12, 0.5);
     groupRef.current.rotation.z = Math.sin(elapsed * 0.65) * 0.045;
     groupRef.current.rotation.y = Math.sin(elapsed * 0.3) * 0.12;
     if (flameRef.current) {
@@ -256,13 +258,13 @@ function SkyLantern({
   });
 
   return (
-    <group ref={groupRef} position={position} visible={active}>
+    <group ref={groupRef} position={position} scale={scale} visible={active}>
       <mesh castShadow>
         <cylinderGeometry args={[0.42, 0.29, 0.94, 6, 1, true]} />
         <meshStandardMaterial
           color="#F2B84A"
           emissive="#E9852C"
-          emissiveIntensity={0.68}
+          emissiveIntensity={0.95}
           side={THREE.DoubleSide}
           transparent
           opacity={0.78}
@@ -350,7 +352,8 @@ function LanternFinale({
     <>
       <SkyLantern
         active={active}
-        position={[0, 0.3, finaleZ - 4]}
+        position={[0, 4.75, finaleZ - 10]}
+        scale={0.62}
         startTimeRef={startTimeRef}
       />
       <FireworkBurst
@@ -452,20 +455,20 @@ export function PalaceGatesScene({
       <group scale={[sceneScale, 0.68, 1]}>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -2.72, -pathLength / 2]}
+          position={[0, -0.08, -pathLength / 2]}
           receiveShadow
         >
           <planeGeometry args={[60, pathLength]} />
           <meshStandardMaterial color="#74614A" roughness={0.82} />
         </mesh>
-        <mesh position={[0, -2.62, -pathLength / 2]} receiveShadow>
+        <mesh position={[0, -0.04, -pathLength / 2]} receiveShadow>
           <boxGeometry args={[4.8, 0.08, pathLength]} />
           <meshStandardMaterial color="#A38B67" roughness={0.58} />
         </mesh>
 
         {[-1, 1].map((side) => (
           <group key={side}>
-            <mesh position={[side * 3.85, -2.57, -pathLength / 2]} receiveShadow>
+            <mesh position={[side * 3.85, -0.07, -pathLength / 2]} receiveShadow>
               <boxGeometry args={[1.6, 0.12, pathLength * 0.94]} />
               <meshPhysicalMaterial
                 color="#7C9C9C"
@@ -477,7 +480,7 @@ export function PalaceGatesScene({
                 opacity={0.74}
               />
             </mesh>
-            <mesh position={[side * 3.85, -2.66, -pathLength / 2]} receiveShadow>
+            <mesh position={[side * 3.85, -0.14, -pathLength / 2]} receiveShadow>
               <boxGeometry args={[1.82, 0.1, pathLength * 0.96]} />
               <meshStandardMaterial color="#504637" roughness={0.76} />
             </mesh>
@@ -488,20 +491,20 @@ export function PalaceGatesScene({
           .filter(({ z }) => z > -pathLength)
           .map(({ x, z, side }) => (
             <group key={`${x}-${z}`} position={[x, 0, z]}>
-              <mesh position={[0, -0.35, 0]} castShadow>
-                <cylinderGeometry args={[0.25, 0.31, 4.7, 12]} />
+              <mesh position={[0, 1, 0]} castShadow>
+                <cylinderGeometry args={[0.25, 0.31, 2, 12]} />
                 <meshStandardMaterial color="#A98D65" roughness={0.82} />
               </mesh>
               <mesh position={[0, 2.08, 0]} castShadow>
                 <boxGeometry args={[0.64, 0.22, 0.68]} />
                 <meshStandardMaterial color="#C5A15A" metalness={0.42} roughness={0.48} />
               </mesh>
-              <mesh position={[0, -2.72, 0]} castShadow>
+              <mesh position={[0, -0.08, 0]} castShadow>
                 <cylinderGeometry args={[0.42, 0.45, 0.16, 12]} />
                 <meshStandardMaterial color="#876C4C" roughness={0.76} />
               </mesh>
               <FlickeringLantern
-                position={[side * -0.42, -2.35, 0.2]}
+                position={[side * -0.42, 0, 0.2]}
                 scale={0.48}
                 color="#E9B85F"
               />
@@ -540,7 +543,7 @@ export function PalaceGatesScene({
         <FlickeringLantern position={[-2.72, 2.72, 0.2]} />
         <FlickeringLantern position={[2.72, 2.72, 0.2]} />
 
-        <group position={[0, 1.25, -7]}>
+        <group position={[0, 1.25, -10]}>
           <mesh castShadow>
             <boxGeometry args={[4.7, 4.2, 0.22]} />
             <meshStandardMaterial color="#6C4A2B" roughness={0.56} metalness={0.16} />
@@ -569,7 +572,7 @@ export function PalaceGatesScene({
           <EventArch key={event.id} event={event} index={index} />
         ))}
 
-        <group position={[0, 0, -12 - events.length * 6]}>
+        <group position={[0, 0, -14 - events.length * 6]}>
           {[-1, 1].map((side) => (
             <mesh key={side} position={[side * 2.25, 2.1, 0]} castShadow>
               <cylinderGeometry args={[0.22, 0.3, 4.2, 12]} />

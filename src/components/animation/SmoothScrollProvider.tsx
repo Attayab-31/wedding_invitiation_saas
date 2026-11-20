@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -31,7 +32,18 @@ export function useSmoothScroll() {
 
 export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
+  const isInitialLockRef = useRef(true);
   const [isLocked, setIsLocked] = useState(true);
+
+  useLayoutEffect(() => {
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
+  }, []);
 
   const setLocked = useCallback((locked: boolean) => {
     setIsLocked(locked);
@@ -78,6 +90,12 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const body = document.body;
     const previousRootOverflow = root.style.overflow;
     const previousBodyOverflow = body.style.overflow;
+
+    if (isLocked && isInitialLockRef.current) {
+      isInitialLockRef.current = false;
+      window.scrollTo(0, 0);
+      lenisRef.current?.scrollTo(0, { immediate: true });
+    }
 
     root.style.overflow = isLocked ? 'hidden' : '';
     body.style.overflow = isLocked ? 'hidden' : '';
