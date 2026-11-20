@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-royal: var(--font-cinzel), 'Times New Roman', serif;
+  --font-body: var(--font-sans), system-ui, sans-serif;
+  --font-calligraphy: var(--font-script), cursive;
+
+  /* Luxury Pakistani Wedding Palette */
+  --burgundy-deep: #3A0715;
+  --maroon-royal: #580F25;
+  --gold-antique: #C5A15A;
+  --gold-champagne: #E6D2A0;
+  --ivory-warm: #F8F1E5;
+  --cream-soft: #EFE4D2;
+  --charcoal-dark: #191516;
+  --amber-mehndi: #D97706;
+  --emerald-rich: #064E3B;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-burgundy-deep: #3A0715;
+  --color-maroon-royal: #580F25;
+  --color-gold-antique: #C5A15A;
+  --color-gold-champagne: #E6D2A0;
+  --color-ivory-warm: #F8F1E5;
+  --color-cream-soft: #EFE4D2;
+  --color-charcoal-dark: #191516;
+  --color-amber-mehndi: #D97706;
+  --color-emerald-rich: #064E3B;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--charcoal-dark);
+  color: var(--ivory-warm);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* Luxury Typography Helpers */
+.font-royal {
+  font-family: var(--font-royal);
+}
+
+.font-serif-luxury {
+  font-family: var(--font-serif);
+}
+
+.font-script-luxury {
+  font-family: var(--font-calligraphy);
+}
+
+/* Gold Metallic Foil Gradients & Shimmers */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #E6D2A0 0%, #C5A15A 50%, #9B7830 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gold-light {
+  background: linear-gradient(135deg, #FFFFFF 0%, #E6D2A0 60%, #C5A15A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.border-gold-gradient {
+  border-image: linear-gradient(to right, #C5A15A, #E6D2A0, #C5A15A) 1;
+}
+
+.bg-gold-shimmer {
+  background: linear-gradient(90deg, rgba(197, 161, 90, 0.1) 0%, rgba(230, 210, 160, 0.3) 50%, rgba(197, 161, 90, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 4s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Mughal Geometric / Arabesque Border Framing */
+.mughal-border {
+  position: relative;
+  border: 1px solid rgba(197, 161, 90, 0.4);
+}
+
+.mughal-border::before,
+.mughal-border::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #C5A15A;
+}
+
+.mughal-border::before {
+  top: -4px;
+  left: -4px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.mughal-border::after {
+  bottom: -4px;
+  right: -4px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #191516;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3A0715;
+  border-radius: 3px;
+  border: 1px solid rgba(197, 161, 90, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C5A15A;
 }
