@@ -1,30 +1,29 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, Suspense, Component, ErrorInfo } from 'react';
+import React, { Component, ErrorInfo, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { Lighting } from './Lighting';
-import { PetalsInstanced } from './PetalsInstanced';
-import { GoldDust } from './GoldDust';
-import { EnvelopeModel } from './EnvelopeModel';
-import { WebGLFallback } from './WebGLFallback';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ResolvedGuestExperience } from '@/types/database';
+import { PalaceGatesScene } from './PalaceGatesScene';
 
 interface InvitationCanvasProps {
   isOpen: boolean;
-  isDiving: boolean;
   onOpen: () => void;
-  onDiveComplete: () => void;
-  guestName: string;
-  coupleNames: string;
+  onGateOpenComplete: () => void;
+  events: ResolvedGuestExperience['events'];
+  isScrollUnlocked: boolean;
+  isRsvpConfirmed: boolean;
+  scrollTargetRef: React.RefObject<HTMLElement | null>;
+  progressRef: React.RefObject<number>;
 }
 
-// Error boundary to capture WebGL context loss or crashes
 class CanvasErrorBoundary extends Component<
-  { fallback: React.ReactNode; children: React.ReactNode },
+  { children: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { fallback: React.ReactNode; children: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -34,175 +33,156 @@ class CanvasErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.warn('WebGL / R3F Canvas error caught, falling back to 3D CSS:', error, errorInfo);
+    console.error('The 3D invitation scene could not render.', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback;
+      return (
+        <div
+          role="alert"
+          className="absolute inset-0 grid place-items-center bg-[#211812] px-6 text-center font-serif text-[#F4E9D3]"
+        >
+          The 3D courtyard could not be displayed. Your invitation details remain available below.
+        </div>
+      );
     }
+
     return this.props.children;
   }
 }
 
-// Orchestrates the cinematic camera dive towards the nested invitation cards inside the envelope
-function CameraController({
-  isDiving,
-  isOpen,
-  onDiveComplete,
-}: {
-  isDiving: boolean;
-  isOpen: boolean;
-  onDiveComplete: () => void;
-}) {
-  const { camera, size } = useThree();
-  const isAnimating = useRef(false);
+type CameraControllerProps = Pick<
+  InvitationCanvasProps,
+  'isOpen' | 'onGateOpenComplete' | 'isScrollUnlocked' | 'events' | 'scrollTargetRef' | 'progressRef'
+>;
 
-  // Compute responsive baseline camera distance
-  const getBaseZ = useCallback(() => {
-    const aspect = size.width / Math.max(1, size.height);
-    if (aspect < 1.25) {
-      return Math.max(6.6, 2.25 / (Math.tan(((camera as THREE.PerspectiveCamera).fov * Math.PI) / 360) * aspect));
-    }
-    return 6.6;
-  }, [camera, size.width, size.height]);
+function CameraController({
+  isOpen,
+  onGateOpenComplete,
+  isScrollUnlocked,
+  events,
+  scrollTargetRef,
+  progressRef,
+}: CameraControllerProps) {
+  const { camera } = useThree();
+  const entryTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
 
-    if (isDiving) {
-      isAnimating.current = true;
-
-      // Cinematic Camera Dive:
-      // Flap swings open, revealing layered cards nestled inside the pocket, then camera swoops right into the card suite
-      const tl = gsap.timeline();
-
-      tl.to(camera.position, {
-        x: 0,
-        y: 0.22,
-        z: 2.05,
-        duration: 1.35,
-        ease: 'power2.inOut',
-        delay: 0.65,
-        onComplete: () => {
-          isAnimating.current = false;
-          onDiveComplete();
-        },
-      });
-
-      tl.to(camera.rotation, {
-        x: -0.02,
-        y: 0,
-        z: 0,
-        duration: 1.35,
-        ease: 'power2.inOut',
-      }, '<');
-    } else if (!isDiving && isOpen) {
-      // Reversible smooth glide back out when returning from deck to envelope view
-      const baseZ = getBaseZ();
-      gsap.to(camera.position, {
-        x: 0,
-        y: 0.05,
-        z: baseZ,
-        duration: 1.1,
-        ease: 'power2.out',
-      });
-      gsap.to(camera.rotation, {
-        x: 0,
-        y: 0,
-        z: 0,
-        duration: 1.1,
-        ease: 'power2.out',
-      });
+    entryTimelineRef.current?.kill();
+    if (isScrollUnlocked) return;
+    if (!isOpen) {
+      camera.position.set(0, 0.45, 8);
+      camera.rotation.set(0, 0, 0);
+      return;
     }
-  }, [isDiving, isOpen, camera, onDiveComplete, getBaseZ]);
 
-  // Adjust camera distance when browser window resizes
+    const timeline = gsap.timeline({
+      onComplete: onGateOpenComplete,
+    });
+    entryTimelineRef.current = timeline;
+    timeline.to(camera.position, {
+      z: 3,
+      duration: 1.2,
+      ease: 'power2.inOut',
+    }, 2);
+
+    return () => {
+      timeline.kill();
+      entryTimelineRef.current = null;
+    };
+  }, [camera, isOpen, isScrollUnlocked, onGateOpenComplete]);
+
   useEffect(() => {
-    if (camera instanceof THREE.PerspectiveCamera && !isDiving && !isAnimating.current) {
-      const baseZ = getBaseZ();
-      camera.position.z = baseZ;
-      camera.position.y = 0.05;
-      camera.updateProjectionMatrix();
+    const target = scrollTargetRef.current;
+    if (
+      !isScrollUnlocked ||
+      !(camera instanceof THREE.PerspectiveCamera) ||
+      !target
+    ) {
+      return;
     }
-  }, [size.width, size.height, camera, isDiving, getBaseZ]);
+
+    const endZ = 3 - (events.length + 3) * 6;
+    const scrollStops = events.length + 3;
+    const tween = gsap.fromTo(
+      camera.position,
+      { z: 3 },
+      {
+        z: endZ,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: target,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.65,
+          snap: {
+            snapTo: (progress) => Math.round(progress * scrollStops) / scrollStops,
+            duration: { min: 0.2, max: 0.7 },
+            delay: 0.08,
+            ease: 'power1.inOut',
+            inertia: false,
+          },
+          invalidateOnRefresh: true,
+          onUpdate: (trigger) => {
+            progressRef.current = trigger.progress;
+          },
+        },
+      }
+    );
+    ScrollTrigger.refresh();
+
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+      progressRef.current = 0;
+    };
+  }, [camera, events.length, isScrollUnlocked, progressRef, scrollTargetRef]);
 
   return null;
 }
 
 export function InvitationCanvas({
   isOpen,
-  isDiving,
   onOpen,
-  onDiveComplete,
-  guestName,
-  coupleNames,
+  onGateOpenComplete,
+  events,
+  isScrollUnlocked,
+  isRsvpConfirmed,
+  scrollTargetRef,
+  progressRef,
 }: InvitationCanvasProps) {
-  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      setWebglSupported(Boolean(gl));
-    } catch {
-      setWebglSupported(false);
-    }
-  }, []);
-
-  if (webglSupported === false) {
-    return (
-      <WebGLFallback
-        isOpen={isOpen}
-        onOpen={onOpen}
-        guestName={guestName}
-        coupleNames={coupleNames}
-        isDiving={isDiving}
-        onDiveComplete={onDiveComplete}
-      />
-    );
-  }
-
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <CanvasErrorBoundary
-        fallback={
-          <WebGLFallback
-            isOpen={isOpen}
-            onOpen={onOpen}
-            guestName={guestName}
-            coupleNames={coupleNames}
-            isDiving={isDiving}
-            onDiveComplete={onDiveComplete}
-          />
-        }
-      >
+    <div className="relative h-full w-full" aria-hidden="true">
+      <CanvasErrorBoundary>
         <Canvas
-          shadows
+          shadows={{ type: THREE.PCFShadowMap }}
           gl={{
             antialias: true,
             alpha: true,
             powerPreference: 'high-performance',
           }}
-          dpr={[1, 1.75]}
-          camera={{ position: [0, 0.05, 6.6], fov: 42 }}
-          className="cursor-grab active:cursor-grabbing w-full h-full"
+          dpr={[1, 1.35]}
+          camera={{ position: [0, 0.45, 8], fov: 42 }}
+          className="h-full w-full"
         >
           <CameraController
-            isDiving={isDiving}
             isOpen={isOpen}
-            onDiveComplete={onDiveComplete}
+            onGateOpenComplete={onGateOpenComplete}
+            events={events}
+            isScrollUnlocked={isScrollUnlocked}
+            scrollTargetRef={scrollTargetRef}
+            progressRef={progressRef}
           />
           <Suspense fallback={null}>
-            <Lighting />
-            <PetalsInstanced count={42} />
-            <GoldDust count={85} />
-            <EnvelopeModel
+            <PalaceGatesScene
               isOpen={isOpen}
-              onOpen={onOpen}
-              guestName={guestName}
-              coupleNames={coupleNames}
-              isDiving={isDiving}
+              onEnter={onOpen}
+              events={events}
+              isRsvpConfirmed={isRsvpConfirmed}
+              progressRef={progressRef}
             />
           </Suspense>
         </Canvas>

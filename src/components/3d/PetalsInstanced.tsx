@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 interface PetalsProps {
   count?: number;
+}
+
+function seededUnit(index: number) {
+  const value = Math.sin(index * 127.1 + 311.7) * 43758.5453;
+  return value - Math.floor(value);
 }
 
 export function PetalsInstanced({ count = 48 }: PetalsProps) {
@@ -29,32 +34,32 @@ export function PetalsInstanced({ count = 48 }: PetalsProps) {
     const colors = [
       new THREE.Color('#9E1B32'), // Deep Velvet Rose
       new THREE.Color('#580F25'), // Royal Maroon
-      new THREE.Color('#D97706'), // Marigold Amber
       new THREE.Color('#C5A15A'), // Antique Gold leaf
-      new THREE.Color('#B91C1C'), // Festive Crimson
+      new THREE.Color('#B76E79'), // Muted rose
     ];
 
     for (let i = 0; i < count; i++) {
+      const seed = i * 16;
       temp.push({
         position: new THREE.Vector3(
-          (Math.random() - 0.5) * 14,
-          (Math.random() - 0.5) * 12 + 2,
-          (Math.random() - 0.5) * 8 - 1
+          (seededUnit(seed) - 0.5) * 14,
+          (seededUnit(seed + 1) - 0.5) * 12 + 2,
+          (seededUnit(seed + 2) - 0.5) * 8 - 1
         ),
         rotation: new THREE.Euler(
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2,
-          Math.random() * Math.PI * 2
+          seededUnit(seed + 3) * Math.PI * 2,
+          seededUnit(seed + 4) * Math.PI * 2,
+          seededUnit(seed + 5) * Math.PI * 2
         ),
         rotationSpeed: new THREE.Vector3(
-          (Math.random() - 0.5) * 1.5,
-          (Math.random() - 0.5) * 1.5,
-          (Math.random() - 0.5) * 1.5
+          (seededUnit(seed + 6) - 0.5) * 1.5,
+          (seededUnit(seed + 7) - 0.5) * 1.5,
+          (seededUnit(seed + 8) - 0.5) * 1.5
         ),
-        speedY: 0.4 + Math.random() * 0.6,
-        driftX: (Math.random() - 0.5) * 0.3,
-        scale: 0.5 + Math.random() * 0.6,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        speedY: 0.2 + seededUnit(seed + 9) * 0.3,
+        driftX: (seededUnit(seed + 10) - 0.5) * 0.3,
+        scale: 0.28 + seededUnit(seed + 11) * 0.3,
+        color: colors[Math.floor(seededUnit(seed + 12) * colors.length)],
       });
     }
     return temp;
@@ -62,14 +67,15 @@ export function PetalsInstanced({ count = 48 }: PetalsProps) {
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // Apply colors once on mount
-  useMemo(() => {
-    if (!meshRef.current) return;
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
     particles.forEach((p, i) => {
-      meshRef.current!.setColorAt(i, p.color);
+      mesh.setColorAt(i, p.color);
     });
-    if (meshRef.current.instanceColor) {
-      meshRef.current.instanceColor.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
     }
   }, [particles]);
 

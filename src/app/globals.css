@@ -118,6 +118,29 @@ body {
   pointer-events: none;
 }
 
+.gold-light-sweep::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -38%;
+  width: 28%;
+  transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+  animation: gold-light-sweep 7.5s ease-in-out infinite;
+}
+
+@keyframes gold-light-sweep {
+  0%, 62% { left: -38%; }
+  100% { left: 120%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gold-light-sweep::after {
+    animation: none;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

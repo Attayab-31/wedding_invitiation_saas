@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Wedding } from '@/types/database';
-import { Heart, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface IntroductionSceneProps {
   wedding: Wedding;
@@ -11,72 +11,74 @@ interface IntroductionSceneProps {
 
 export function IntroductionScene({ wedding, guestName }: IntroductionSceneProps) {
   return (
-    <section
-      id="introduction"
-      className="relative min-h-[85vh] w-full flex items-center justify-center py-20 px-4 bg-gradient-to-b from-[#FAF7F2] via-[#F4EFEB] to-[#FAF7F2]"
-    >
-      {/* Decorative Mughal Corner Flourishes */}
-      <div className="max-w-3xl w-full mx-auto relative mughal-border luxury-card p-8 md:p-14 rounded-2xl text-center">
-        
-        {/* Bismillah Calligraphy */}
-        <div className="mb-6">
-          <p className="font-serif italic text-3xl md:text-4xl text-burgundy-gradient tracking-wide mb-1">
+    <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-[#E1C47E]/75 bg-[#F9F4E8]/90 p-5 text-center shadow-[0_35px_90px_rgba(12,7,4,.45)] backdrop-blur-xl sm:p-8 md:p-11">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-2 rounded-[1.3rem] border border-[#B88E3E]/45" />
+      <div aria-hidden="true" className="gold-light-sweep pointer-events-none absolute inset-2 overflow-hidden rounded-[1.3rem]" />
+
+      <div className="relative">
+        <div className="mb-4 sm:mb-5">
+          <Sparkles aria-hidden="true" className="mx-auto mb-2 h-4 w-4 text-[#B88E3E]" />
+          <p className="font-serif italic text-2xl tracking-wide text-burgundy-gradient sm:text-3xl md:text-4xl">
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </p>
-          <p className="text-[11px] uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-semibold mt-1">
+          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8C6D3B] sm:text-[10px] sm:tracking-[0.25em]">
             In the name of Allah, the Most Gracious, the Most Merciful
           </p>
         </div>
 
-        {/* Quranic Verse */}
-        <blockquote className="my-8 px-6 py-5 border-y-2 border-[#B88E3E]/30 bg-[#FAF7F2]/80 rounded-lg">
-          <p className="font-serif italic text-base md:text-lg text-[#231713] leading-relaxed">
+        <blockquote className="my-4 rounded-lg border-y border-[#B88E3E]/35 bg-[#FFFDF9]/70 px-4 py-3 sm:my-5 sm:px-6 sm:py-4">
+          <p className="font-serif text-xs italic leading-relaxed text-[#231713] sm:text-sm md:text-base">
             &ldquo;And among His signs is that He created for you mates from among yourselves, that you may dwell in tranquility with them, and He has put love and mercy between your hearts.&rdquo;
           </p>
-          <cite className="block text-xs uppercase tracking-widest text-[#8C6D3B] font-royal mt-2.5 not-italic font-semibold">
+          <cite className="mt-2 block text-[9px] font-semibold uppercase tracking-widest text-[#8C6D3B] not-italic sm:text-[10px]">
             — Surah Ar-Rum [30:21]
           </cite>
         </blockquote>
 
-        {/* Host Names */}
-        <div className="my-7">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-bold block mb-2">
+        <div className="my-4 sm:my-5">
+          <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.22em] text-[#8C6D3B] sm:text-[10px]">
             Together With Their Families
           </span>
-          <p className="font-serif text-lg md:text-xl text-[#3A0715] font-semibold leading-relaxed max-w-xl mx-auto">
+          <p className="mx-auto max-w-xl font-serif text-sm font-semibold leading-relaxed text-[#3A0715] sm:text-base">
             {wedding.host_names}
           </p>
         </div>
 
-        {/* Couple Title */}
-        <div className="my-8 py-6 border-y border-[#B88E3E]/20 bg-gradient-to-r from-transparent via-[#F7F2E9] to-transparent">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#6B4E3D] font-royal mb-3">
+        <div className="my-4 border-y border-[#B88E3E]/25 bg-gradient-to-r from-transparent via-[#EDE3CB]/75 to-transparent py-4 sm:my-5 sm:py-5">
+          <p className="mb-2 text-[9px] uppercase tracking-[0.16em] text-[#6B4E3D] sm:text-[10px] sm:tracking-[0.2em]">
             Request the honor of your presence and prayers to celebrate the union of
           </p>
-          <h2 className="text-3xl md:text-5xl font-royal font-bold text-burgundy-gradient mb-2">
+          <h2 className="font-royal text-2xl font-bold text-burgundy-gradient sm:text-3xl md:text-4xl">
             {wedding.bride_name}
           </h2>
-          <span className="font-script-luxury text-3xl md:text-4xl text-[#B88E3E] block my-1">
+          <span className="my-0.5 block font-script-luxury text-3xl text-[#B88E3E] sm:text-4xl">
             &amp;
           </span>
-          <h2 className="text-3xl md:text-5xl font-royal font-bold text-burgundy-gradient">
+          <h2 className="font-royal text-2xl font-bold text-burgundy-gradient sm:text-3xl md:text-4xl">
             {wedding.groom_name}
           </h2>
+          <p className="mt-3 font-royal text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6B4E3D]">
+            {new Intl.DateTimeFormat('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+              timeZone: 'UTC',
+            }).format(new Date(`${wedding.wedding_date}T12:00:00Z`))}
+          </p>
         </div>
 
-        {/* Guest Personalized Callout */}
-        <div className="mt-8 pt-4">
-          <span className="text-xs uppercase tracking-widest text-[#8C6D3B] font-royal font-semibold">
+        <div className="pt-1">
+          <span className="text-[9px] font-semibold uppercase tracking-widest text-[#8C6D3B] sm:text-[10px]">
             Cordially Invited
           </span>
-          <p className="text-2xl md:text-3xl font-serif font-bold text-[#3A0715] mt-1">
+          <p className="mt-0.5 font-serif text-lg font-bold text-[#3A0715] sm:text-xl">
             {guestName}
           </p>
-          <p className="text-xs text-[#6B4E3D] font-serif italic mt-2 max-w-md mx-auto">
+          <p className="mx-auto mt-1 max-w-md font-serif text-[11px] italic text-[#6B4E3D] sm:text-xs">
             Your esteemed presence and warm blessings are our greatest joy as we commence this sacred journey.
           </p>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

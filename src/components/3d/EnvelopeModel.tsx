@@ -27,9 +27,6 @@ export function EnvelopeModel({
   const cardRootRef = useRef<THREE.Group | null>(null);
   const cardMeshRef = useRef<THREE.Mesh | null>(null);
 
-  // Mouse tilt target for smooth physical parallax
-  const targetRotation = useRef({ x: 0, y: 0 });
-
   // Load the 3D GLB model
   const { scene } = useGLTF('/models/luxury_envelope.glb');
 
@@ -47,7 +44,7 @@ export function EnvelopeModel({
     if (!ctx) return null;
 
     // Base: 600gsm Heavy Warm Ivory Cotton Paper
-    ctx.fillStyle = '#FAF7F2';
+    ctx.fillStyle = '#F2E8D6';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Subtle paper grain vignette
@@ -175,7 +172,7 @@ export function EnvelopeModel({
     // Add a secondary layered function card (e.g. Mehndi / Barat insert) behind the main card
     // This gives the envelope that unmistakable rich, tiered, multi-card feel
     if (cardRootRef.current && !cardRootRef.current.getObjectByName('Secondary_Insert_Card')) {
-      const insertGeo = new THREE.BoxGeometry(3.3, 2.2, 0.01);
+      const insertGeo = new THREE.BoxGeometry(3.15, 2.05, 0.01);
       const insertMat = new THREE.MeshStandardMaterial({
         color: 0xDFCA94, // Champagne gold shimmer insert
         roughness: 0.35,
@@ -184,7 +181,6 @@ export function EnvelopeModel({
       const insertMesh = new THREE.Mesh(insertGeo, insertMat);
       insertMesh.name = 'Secondary_Insert_Card';
       insertMesh.position.set(-0.06, 0.07, -0.015);
-      insertMesh.rotation.z = -0.012; // Subtle 0.7-degree natural stationery tilt
       cardRootRef.current.add(insertMesh);
     }
   }, [clonedScene, cardTexture]);
@@ -265,23 +261,7 @@ export function EnvelopeModel({
     }
   }, [isOpen]);
 
-  // Pointer hover parallax
-  useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      const { innerWidth, innerHeight } = window;
-      const x = (e.clientX / innerWidth - 0.5) * 2;
-      const y = (e.clientY / innerHeight - 0.5) * 2;
-      targetRotation.current = {
-        x: -y * 0.1,
-        y: x * 0.16,
-      };
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    return () => window.removeEventListener('pointermove', handlePointerMove);
-  }, []);
-
-  // Frame tick for gentle ambient floating & smooth mouse tilt
+  // Frame tick for gentle ambient floating
   useFrame((state, delta) => {
     if (!rootGroup.current) return;
 
@@ -293,28 +273,12 @@ export function EnvelopeModel({
       4,
       delta
     );
-
-    // Parallax pointer tilt (smoothly zeroed out during camera dive)
-    const targetX = isDiving ? 0 : targetRotation.current.x;
-    const targetY = isDiving ? 0 : targetRotation.current.y;
-
-    rootGroup.current.rotation.x = THREE.MathUtils.damp(
-      rootGroup.current.rotation.x,
-      targetX,
-      4,
-      delta
-    );
-    rootGroup.current.rotation.y = THREE.MathUtils.damp(
-      rootGroup.current.rotation.y,
-      targetY,
-      4,
-      delta
-    );
   });
 
   return (
     <group
       ref={rootGroup}
+      scale={1.08}
       onClick={(e) => {
         e.stopPropagation();
         onOpen();

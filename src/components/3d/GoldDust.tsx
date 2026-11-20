@@ -4,20 +4,23 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+function seededUnit(index: number) {
+  const value = Math.sin(index * 127.1 + 311.7) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 export function GoldDust({ count = 120 }: { count?: number }) {
   const pointsRef = useRef<THREE.Points>(null);
 
-  const [positions, scales] = useMemo(() => {
+  const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
-    const sc = new Float32Array(count);
 
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 12;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 6;
-      sc[i] = Math.random() * 0.8 + 0.2;
+      pos[i * 3] = (seededUnit(i * 3) - 0.5) * 12;
+      pos[i * 3 + 1] = (seededUnit(i * 3 + 1) - 0.5) * 10;
+      pos[i * 3 + 2] = (seededUnit(i * 3 + 2) - 0.5) * 6;
     }
-    return [pos, sc];
+    return pos;
   }, [count]);
 
   useFrame((state, delta) => {
@@ -47,10 +50,10 @@ export function GoldDust({ count = 120 }: { count?: number }) {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.06}
+        size={0.04}
         color="#E6D2A0"
         transparent
-        opacity={0.8}
+        opacity={0.48}
         blending={THREE.AdditiveBlending}
       />
     </points>

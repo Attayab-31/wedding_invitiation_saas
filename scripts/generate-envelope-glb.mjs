@@ -37,16 +37,16 @@ const bodyHeight = 2.4;
 
 // 1. Envelope Paper Materials
 const envelopePaperMaterial = new THREE.MeshStandardMaterial({
-  color: COLOR_BURGUNDY_VELVET,
-  roughness: 0.55,
-  metalness: 0.12,
+  color: 0x4A0A1C,
+  roughness: 0.72,
+  metalness: 0.04,
   name: 'Envelope_Paper_Mat',
 });
 
 const envelopeInnerLiningMat = new THREE.MeshStandardMaterial({
-  color: COLOR_GOLD_CHAMPAGNE,
-  roughness: 0.35,
-  metalness: 0.55,
+  color: 0xB88E3E,
+  roughness: 0.48,
+  metalness: 0.32,
   name: 'Envelope_Inner_Lining_Mat',
 });
 
@@ -79,32 +79,38 @@ envelopeLining.position.set(0, 0, -0.015);
 envelopeGroup.add(envelopeLining);
 
 // Envelope Pocket Front (Lower fold)
-const pocketGeometry = new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, 0.02);
+const pocketShape = new THREE.Shape();
+pocketShape.moveTo(-bodyWidth * 0.5, -bodyHeight * 0.5);
+pocketShape.lineTo(bodyWidth * 0.5, -bodyHeight * 0.5);
+pocketShape.lineTo(bodyWidth * 0.5, bodyHeight * 0.06);
+pocketShape.lineTo(0, -bodyHeight * 0.12);
+pocketShape.lineTo(-bodyWidth * 0.5, bodyHeight * 0.06);
+pocketShape.closePath();
+const pocketGeometry = new THREE.ShapeGeometry(pocketShape);
 const pocket = new THREE.Mesh(pocketGeometry, envelopePaperMaterial);
 pocket.name = 'Envelope_Pocket';
-pocket.position.set(0, -bodyHeight * 0.225, 0.07);
+pocket.position.set(0, 0, 0.07);
 envelopeGroup.add(pocket);
 
-// Left Fold triangle
+// Folded side wings, set behind the front pocket
 const leftFoldShape = new THREE.Shape();
-leftFoldShape.moveTo(0, 0);
-leftFoldShape.lineTo(bodyWidth * 0.45, bodyHeight * 0.38);
-leftFoldShape.lineTo(0, bodyHeight * 0.78);
+leftFoldShape.moveTo(-bodyWidth * 0.5, -bodyHeight * 0.5);
+leftFoldShape.lineTo(0, 0);
+leftFoldShape.lineTo(-bodyWidth * 0.5, bodyHeight * 0.5);
 leftFoldShape.closePath();
 const leftFoldGeo = new THREE.ShapeGeometry(leftFoldShape);
 const leftFold = new THREE.Mesh(leftFoldGeo, envelopePaperMaterial);
-leftFold.position.set(-bodyWidth * 0.5, -bodyHeight * 0.5, 0.022);
+leftFold.position.set(0, 0, 0.018);
 envelopeGroup.add(leftFold);
 
-// Right Fold triangle
 const rightFoldShape = new THREE.Shape();
-rightFoldShape.moveTo(0, 0);
-rightFoldShape.lineTo(-bodyWidth * 0.45, bodyHeight * 0.38);
-rightFoldShape.lineTo(0, bodyHeight * 0.78);
+rightFoldShape.moveTo(bodyWidth * 0.5, -bodyHeight * 0.5);
+rightFoldShape.lineTo(0, 0);
+rightFoldShape.lineTo(bodyWidth * 0.5, bodyHeight * 0.5);
 rightFoldShape.closePath();
 const rightFoldGeo = new THREE.ShapeGeometry(rightFoldShape);
 const rightFold = new THREE.Mesh(rightFoldGeo, envelopePaperMaterial);
-rightFold.position.set(bodyWidth * 0.5, -bodyHeight * 0.5, 0.022);
+rightFold.position.set(0, 0, 0.019);
 envelopeGroup.add(rightFold);
 
 // Top edge gold foil trim
@@ -154,6 +160,71 @@ flapTrimMesh.name = 'Flap_Gold_Trim';
 flapTrimMesh.position.set(0, 0, 0.028);
 flapPivot.add(flapTrimMesh);
 
+// Restrained foil arabesques bring depth to the otherwise plain velvet flap
+const addFoilCurve = (parent, name, points, radius = 0.009) => {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(([x, y, z]) => new THREE.Vector3(x, y, z))
+  );
+  const mesh = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 32, radius, 6, false),
+    goldTrimMaterial
+  );
+  mesh.name = name;
+  parent.add(mesh);
+};
+
+const flapOrnamentLeft = [
+  [-1.28, -0.12, 0.046],
+  [-1.03, -0.2, 0.046],
+  [-0.86, -0.42, 0.046],
+  [-0.65, -0.47, 0.046],
+  [-0.48, -0.33, 0.046],
+  [-0.33, -0.49, 0.046],
+  [-0.18, -0.54, 0.046],
+];
+addFoilCurve(flapPivot, 'Flap_Arabesque_Left', flapOrnamentLeft);
+addFoilCurve(
+  flapPivot,
+  'Flap_Arabesque_Right',
+  flapOrnamentLeft.map(([x, y, z]) => [-x, y, z])
+);
+
+const flapRosette = new THREE.Group();
+flapRosette.name = 'Flap_Central_Rosette';
+flapRosette.position.set(0, -0.78, 0.048);
+flapPivot.add(flapRosette);
+for (let i = 0; i < 8; i++) {
+  const angle = (i / 8) * Math.PI * 2;
+  const petal = new THREE.Mesh(
+    new THREE.TorusGeometry(0.055, 0.008, 6, 16),
+    goldTrimMaterial
+  );
+  petal.position.set(Math.cos(angle) * 0.075, Math.sin(angle) * 0.075, 0);
+  petal.scale.set(0.75, 1.25, 1);
+  petal.rotation.z = angle;
+  flapRosette.add(petal);
+}
+const rosetteCenter = new THREE.Mesh(
+  new THREE.SphereGeometry(0.028, 12, 8),
+  goldTrimMaterial
+);
+rosetteCenter.position.z = 0.008;
+flapRosette.add(rosetteCenter);
+
+// Fine raised foil seams trace the envelope's characteristic V-fold
+addFoilCurve(
+  envelopeGroup,
+  'Pocket_Foil_Seam',
+  [
+    [-bodyWidth * 0.47, bodyHeight * 0.055, 0.092],
+    [-bodyWidth * 0.24, -bodyHeight * 0.16, 0.092],
+    [0, -bodyHeight * 0.32, 0.092],
+    [bodyWidth * 0.24, -bodyHeight * 0.16, 0.092],
+    [bodyWidth * 0.47, bodyHeight * 0.055, 0.092],
+  ],
+  0.012
+);
+
 // 3. Wax Seal (Attached to Flap so it swings open realistically with the flap)
 const waxSealGroup = new THREE.Group();
 waxSealGroup.name = 'Wax_Seal';
@@ -180,14 +251,41 @@ monogramMesh.name = 'Seal_Monogram';
 monogramMesh.position.z = 0.042;
 waxSealGroup.add(monogramMesh);
 
+const sealEngraving = new THREE.Group();
+sealEngraving.name = 'Seal_Floral_Engraving';
+sealEngraving.position.z = 0.058;
+waxSealGroup.add(sealEngraving);
+const sealEngravingRing = new THREE.Mesh(
+  new THREE.TorusGeometry(0.15, 0.009, 6, 32),
+  waxMaterial
+);
+sealEngraving.add(sealEngravingRing);
+for (let i = 0; i < 8; i++) {
+  const angle = (i / 8) * Math.PI * 2;
+  const petal = new THREE.Mesh(
+    new THREE.TorusGeometry(0.045, 0.008, 6, 12),
+    waxMaterial
+  );
+  petal.position.set(Math.cos(angle) * 0.085, Math.sin(angle) * 0.085, 0.002);
+  petal.scale.set(0.7, 1.2, 1);
+  petal.rotation.z = angle;
+  sealEngraving.add(petal);
+}
+const sealEngravingCenter = new THREE.Mesh(
+  new THREE.SphereGeometry(0.024, 10, 8),
+  waxMaterial
+);
+sealEngravingCenter.position.z = 0.005;
+sealEngraving.add(sealEngravingCenter);
+
 // 4. Personalized Invitation Card (Positioned inside the envelope pocket)
 const cardGroup = new THREE.Group();
 cardGroup.name = 'Invitation_Card_Root';
 cardGroup.position.set(0, 0.05, 0.005);
 envelopeGroup.add(cardGroup);
 
-const cardWidth = 3.3;
-const cardHeight = 2.2;
+const cardWidth = 3.1;
+const cardHeight = 2.0;
 const cardGeo = new THREE.BoxGeometry(cardWidth, cardHeight, 0.015);
 const cardMaterial = new THREE.MeshStandardMaterial({
   color: COLOR_IVORY_PAPER,
