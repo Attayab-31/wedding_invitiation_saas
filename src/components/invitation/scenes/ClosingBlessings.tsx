@@ -38,12 +38,12 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
   }, [wedding.wedding_date]);
 
   return (
-    <section className="relative py-24 px-4 bg-gradient-to-t from-[#191516] via-[#24050E] to-[#191516] text-center">
+    <section className="relative py-24 px-4 bg-gradient-to-t from-[#FAF7F2] via-[#F3ECE0] to-[#FAF7F2] text-center">
       <div className="max-w-2xl mx-auto space-y-10">
         
         {/* Countdown Card */}
-        <div className="mughal-border p-8 rounded-xl bg-[#23050E]/80 backdrop-blur-md">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#C5A15A] font-royal font-semibold block mb-4">
+        <div className="mughal-border luxury-card p-8 rounded-2xl shadow-xl">
+          <span className="text-xs uppercase tracking-[0.25em] text-[#8C6D3B] font-royal font-bold block mb-4">
             Countdown to Celebrations
           </span>
 
@@ -56,12 +56,12 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
             ].map((item) => (
               <div
                 key={item.label}
-                className="p-3 md:p-4 rounded-lg bg-[#3A0715]/60 border border-[#C5A15A]/30 flex flex-col items-center"
+                className="p-3 md:p-4 rounded-xl bg-[#FAF7F2] border border-[#B88E3E]/30 shadow-inner flex flex-col items-center"
               >
-                <span className="text-2xl md:text-4xl font-royal font-bold text-gold-gradient">
+                <span className="text-2xl md:text-4xl font-royal font-bold text-burgundy-gradient">
                   {item.value}
                 </span>
-                <span className="text-[10px] md:text-xs uppercase tracking-wider text-[#E6D2A0]/70 font-royal mt-1">
+                <span className="text-[10px] md:text-xs uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold mt-1">
                   {item.label}
                 </span>
               </div>
@@ -71,23 +71,23 @@ export function ClosingBlessings({ wedding }: { wedding: Wedding }) {
 
         {/* Closing Warm Message */}
         <div className="space-y-4">
-          <div className="inline-flex items-center justify-center gap-2 text-[#C5A15A]">
+          <div className="inline-flex items-center justify-center gap-2 text-[#B88E3E]">
             <Sparkles className="w-4 h-4" />
-            <Heart className="w-5 h-5 fill-[#C5A15A]" />
+            <Heart className="w-5 h-5 fill-[#B88E3E]" />
             <Sparkles className="w-4 h-4" />
           </div>
 
-          <h3 className="text-2xl md:text-3xl font-royal font-bold text-gold-gradient">
+          <h3 className="text-2xl md:text-3xl font-royal font-bold text-burgundy-gradient">
             We Await Your Gracious Presence
           </h3>
 
-          <p className="font-serif italic text-base md:text-lg text-[#F8F1E5]/80 max-w-xl mx-auto leading-relaxed">
-            &ldquo;May our gathering be blessed with laughter, love, unforgettable memories, and your warm prayers for our future together.&rdquo;
+          <p className="font-serif italic text-base md:text-lg text-[#6B4E3D] max-w-xl mx-auto leading-relaxed">
+            &ldquo;May our gathering be blessed with warmth, laughter, cherished memories, and your sincere du&apos;as for our new beginning.&rdquo;
           </p>
 
-          <p className="text-xs uppercase tracking-widest text-[#C5A15A] font-royal pt-4">
-            With Warm Regards &amp; Respect,
-            <span className="block text-sm text-[#F8F1E5] font-serif normal-case mt-1 font-semibold">
+          <p className="text-xs uppercase tracking-widest text-[#8C6D3B] font-royal pt-4 font-bold">
+            With Sincere Regard &amp; Prayers,
+            <span className="block text-base text-[#3A0715] font-serif normal-case mt-1 font-bold">
               The Khan &amp; Raza Families
             </span>
           </p>

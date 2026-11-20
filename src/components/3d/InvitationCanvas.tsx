@@ -7,7 +7,7 @@ import { PetalsInstanced } from './PetalsInstanced';
 import { GoldDust } from './GoldDust';
 import { EnvelopeModel } from './EnvelopeModel';
 import { WebGLFallback } from './WebGLFallback';
-import { Sparkles, Loader } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface InvitationCanvasProps {
   isOpen: boolean;
@@ -51,7 +51,6 @@ export function InvitationCanvas({
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Detect WebGL capability safely in browser
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -61,7 +60,6 @@ export function InvitationCanvas({
     }
   }, []);
 
-  // During SSR or before test
   if (webglSupported === false) {
     return (
       <WebGLFallback
@@ -99,7 +97,7 @@ export function InvitationCanvas({
           <Suspense fallback={null}>
             <Lighting />
             <PetalsInstanced count={42} />
-            <GoldDust count={90} />
+            <GoldDust count={85} />
             <EnvelopeModel
               isOpen={isOpen}
               onOpen={onOpen}
@@ -111,17 +109,17 @@ export function InvitationCanvas({
 
         {/* Seal Interaction Call-To-Action Overlay */}
         {!isOpen && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-2">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-2">
             <button
               onClick={onOpen}
-              className="pointer-events-auto flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#3A0715] via-[#580F25] to-[#3A0715] border border-[#C5A15A] text-[#E6D2A0] shadow-[0_0_20px_rgba(197,161,90,0.35)] hover:shadow-[0_0_30px_rgba(197,161,90,0.6)] hover:scale-105 active:scale-95 transition-all text-sm font-royal tracking-widest uppercase cursor-pointer"
+              className="pointer-events-auto flex items-center gap-2 px-7 py-3 rounded-full bg-gradient-to-r from-[#4A0A1C] via-[#630F28] to-[#4A0A1C] border-2 border-[#DFCA94] text-[#FAF7F2] shadow-[0_10px_30px_rgba(58,7,21,0.35)] hover:shadow-[0_12px_40px_rgba(184,142,62,0.4)] hover:scale-105 active:scale-95 transition-all text-xs md:text-sm font-royal font-bold tracking-widest uppercase cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-[#C5A15A] animate-pulse" />
-              <span>Tap to Open Invitation</span>
-              <Sparkles className="w-4 h-4 text-[#C5A15A] animate-pulse" />
+              <Sparkles className="w-4 h-4 text-[#DFCA94] animate-pulse" />
+              <span>Tap Royal Wax Seal to Open</span>
+              <Sparkles className="w-4 h-4 text-[#DFCA94] animate-pulse" />
             </button>
-            <p className="text-xs text-[#E6D2A0]/70 font-serif italic tracking-wide">
-              Click the royal wax seal or button to unseal
+            <p className="text-xs text-[#580F25] font-serif italic tracking-wide bg-[#FAF7F2]/90 px-3 py-0.5 rounded-full shadow-sm border border-[#B88E3E]/30">
+              Click the monogram seal or button to unseal your invitation
             </p>
           </div>
         )}

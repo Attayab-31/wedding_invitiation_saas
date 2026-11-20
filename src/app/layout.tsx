@@ -49,7 +49,7 @@ export default function RootLayout({
       lang="en"
       className={`${cormorant.variable} ${cinzel.variable} ${montserrat.variable} ${script.variable} h-full scroll-smooth`}
     >
-      <body className="min-h-full bg-[#191516] text-[#F8F1E5] antialiased selection:bg-[#C5A15A] selection:text-[#3A0715]">
+      <body className="min-h-full bg-[#FAF7F2] text-[#231713] antialiased selection:bg-[#B88E3E] selection:text-white">
         {children}
       </body>
     </html>

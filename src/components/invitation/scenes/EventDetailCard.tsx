@@ -14,7 +14,6 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
   const isBarat = event.event_type === 'barat';
   const isWalima = event.event_type === 'walima';
 
-  // Format event date nicely
   const formattedDate = new Date(event.event_date + 'T12:00:00Z').toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -22,56 +21,60 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
     year: 'numeric',
   });
 
-  // Distinct luxury styling per Pakistani wedding event type
+  // Distinct Pakistani ceremony styling on luminous ivory stationery
   const themeStyles = isMehndi
     ? {
-        border: 'border-[#D97706]/50',
-        bg: 'bg-gradient-to-b from-[#2B1704]/90 via-[#1C1004]/90 to-[#191516]/95',
-        accentText: 'text-[#F59E0B]',
-        tagBg: 'bg-[#D97706]/20 border-[#D97706]/40 text-[#FBBF24]',
-        button: 'bg-gradient-to-r from-[#D97706] to-[#B45309] hover:from-[#B45309] hover:to-[#92400E]',
-        badgeTitle: 'MAYUN & MEHNDI RUNG',
+        cardBorder: 'border-[#D97706]/40',
+        cardBg: 'bg-[#FFFDF9]',
+        tagBg: 'bg-[#FEF3C7] border-[#F59E0B]/50 text-[#B45309]',
+        headerTitle: 'MAYUN & MEHNDI RUNG',
+        accentText: 'text-[#B45309]',
+        dateBadge: 'bg-[#FFFBEB] text-[#92400E] border-[#FDE68A]',
+        button: 'bg-gradient-to-r from-[#D97706] to-[#B45309] hover:from-[#B45309] hover:to-[#92400E] text-white',
       }
     : isBarat
     ? {
-        border: 'border-[#C5A15A]/60',
-        bg: 'bg-gradient-to-b from-[#3A0715]/90 via-[#25040D]/90 to-[#191516]/95',
-        accentText: 'text-gold-gradient',
-        tagBg: 'bg-[#580F25]/40 border-[#C5A15A]/40 text-[#E6D2A0]',
-        button: 'bg-gradient-to-r from-[#580F25] to-[#3A0715] border border-[#C5A15A] hover:bg-[#580F25]',
-        badgeTitle: 'THE ROYAL BARAT CEREMONY',
+        cardBorder: 'border-[#B88E3E]/60',
+        cardBg: 'bg-[#FFFDF9]',
+        tagBg: 'bg-[#FDF2F4] border-[#580F25]/30 text-[#580F25]',
+        headerTitle: 'THE ROYAL BARAT CEREMONY',
+        accentText: 'text-burgundy-gradient',
+        dateBadge: 'bg-[#FAF7F2] text-[#3A0715] border-[#B88E3E]/30',
+        button: 'bg-gradient-to-r from-[#580F25] to-[#3A0715] hover:from-[#721531] hover:to-[#4A081A] text-white',
       }
     : {
-        border: 'border-[#E6D2A0]/50',
-        bg: 'bg-gradient-to-b from-[#221B18]/90 via-[#171413]/90 to-[#191516]/95',
-        accentText: 'text-gold-light',
-        tagBg: 'bg-[#C5A15A]/15 border-[#E6D2A0]/30 text-[#E6D2A0]',
-        button: 'bg-gradient-to-r from-[#C5A15A] to-[#8C6D3B] hover:from-[#8C6D3B] hover:to-[#6B4F35]',
-        badgeTitle: 'THE WALIMA RECEPTION',
+        cardBorder: 'border-[#B88E3E]/40',
+        cardBg: 'bg-[#FFFDF9]',
+        tagBg: 'bg-[#FDFBF7] border-[#DFCA94] text-[#8C6D3B]',
+        headerTitle: 'THE WALIMA RECEPTION',
+        accentText: 'text-burgundy-gradient',
+        dateBadge: 'bg-[#FAF7F2] text-[#6B4E3D] border-[#DFCA94]',
+        button: 'bg-gradient-to-r from-[#8C6D3B] to-[#6B4E3D] hover:from-[#6B4E3D] hover:to-[#554030] text-white',
       };
 
   return (
     <div
-      className={`relative w-full max-w-2xl mx-auto rounded-xl p-6 md:p-10 border ${themeStyles.border} ${themeStyles.bg} backdrop-blur-md shadow-2xl transition-all duration-500 hover:shadow-[0_0_35px_rgba(197,161,90,0.2)]`}
+      id={`event-${event.event_type}`}
+      className={`relative w-full max-w-2xl mx-auto rounded-2xl p-7 md:p-10 border ${themeStyles.cardBorder} ${themeStyles.cardBg} luxury-card transition-all duration-500 hover:shadow-[0_15px_45px_rgba(58,7,21,0.12)]`}
     >
-      {/* Decorative corner accents */}
-      <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-[#C5A15A]" />
-      <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-[#C5A15A]" />
-      <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-[#C5A15A]" />
-      <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-[#C5A15A]" />
+      {/* Mughal corner flourishes */}
+      <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-[#B88E3E]" />
+      <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-[#B88E3E]" />
+      <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-[#B88E3E]" />
+      <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-[#B88E3E]" />
 
       {/* Header Tag */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <span
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-royal font-semibold uppercase tracking-widest border ${themeStyles.tagBg}`}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-royal font-bold uppercase tracking-widest border ${themeStyles.tagBg}`}
         >
-          <Sparkles className="w-3 h-3" />
-          {themeStyles.badgeTitle}
+          <Sparkles className="w-3.5 h-3.5" />
+          {themeStyles.headerTitle}
         </span>
 
         {event.guest_max_attendees && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-[#E6D2A0] bg-[#191516]/80 px-3 py-1 rounded-full border border-[#C5A15A]/30">
-            <Users className="w-3.5 h-3.5 text-[#C5A15A]" />
+          <span className="inline-flex items-center gap-1.5 text-xs text-[#580F25] bg-[#FAF7F2] px-3.5 py-1 rounded-full border border-[#B88E3E]/40 font-medium">
+            <Users className="w-3.5 h-3.5 text-[#B88E3E]" />
             Invited for up to {event.guest_max_attendees} {event.guest_max_attendees === 1 ? 'Guest' : 'Guests'}
           </span>
         )}
@@ -84,21 +87,21 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
 
       {/* Description */}
       {event.description && (
-        <p className="text-sm md:text-base font-serif italic text-[#F8F1E5]/80 mb-6 leading-relaxed">
+        <p className="text-sm md:text-base font-serif italic text-[#6B4E3D] mb-6 leading-relaxed">
           {event.description}
         </p>
       )}
 
       {/* Function Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 border-y border-[#C5A15A]/20 my-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-5 border-y border-[#B88E3E]/20 my-6">
         {/* Date */}
         <div className="flex items-start gap-3">
-          <Calendar className="w-5 h-5 text-[#C5A15A] mt-0.5 shrink-0" />
+          <Calendar className="w-5 h-5 text-[#B88E3E] mt-0.5 shrink-0" />
           <div>
-            <span className="block text-[11px] uppercase tracking-wider text-[#C5A15A]/80 font-royal">
+            <span className="block text-[11px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold">
               Date
             </span>
-            <span className="text-sm md:text-base text-[#F8F1E5] font-serif font-medium">
+            <span className="text-sm md:text-base text-[#231713] font-serif font-semibold">
               {formattedDate}
             </span>
           </div>
@@ -106,12 +109,12 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
 
         {/* Time */}
         <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-[#C5A15A] mt-0.5 shrink-0" />
+          <Clock className="w-5 h-5 text-[#B88E3E] mt-0.5 shrink-0" />
           <div>
-            <span className="block text-[11px] uppercase tracking-wider text-[#C5A15A]/80 font-royal">
+            <span className="block text-[11px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold">
               Time
             </span>
-            <span className="text-sm md:text-base text-[#F8F1E5] font-serif font-medium">
+            <span className="text-sm md:text-base text-[#231713] font-serif font-semibold">
               {event.start_time} {event.end_time ? `– ${event.end_time}` : ''}
             </span>
           </div>
@@ -119,15 +122,15 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
 
         {/* Venue */}
         <div className="flex items-start gap-3 md:col-span-2">
-          <MapPin className="w-5 h-5 text-[#C5A15A] mt-0.5 shrink-0" />
+          <MapPin className="w-5 h-5 text-[#B88E3E] mt-0.5 shrink-0" />
           <div>
-            <span className="block text-[11px] uppercase tracking-wider text-[#C5A15A]/80 font-royal">
+            <span className="block text-[11px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold">
               Venue
             </span>
-            <span className="text-sm md:text-base text-[#F8F1E5] font-serif font-medium block">
+            <span className="text-sm md:text-base text-[#3A0715] font-serif font-bold block">
               {event.venue_name}
             </span>
-            <span className="text-xs text-[#E6D2A0]/70 block mt-0.5">
+            <span className="text-xs text-[#6B4E3D] block mt-0.5 font-sans">
               {event.venue_address}
             </span>
           </div>
@@ -135,11 +138,11 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
 
         {/* Dress Code */}
         {event.dress_code && (
-          <div className="md:col-span-2 pt-2">
-            <span className="block text-[11px] uppercase tracking-wider text-[#C5A15A]/80 font-royal mb-1">
-              Dress Code
+          <div className="md:col-span-2 pt-1">
+            <span className="block text-[11px] uppercase tracking-wider text-[#8C6D3B] font-royal font-semibold mb-1">
+              Dress Code Advice
             </span>
-            <span className="text-xs md:text-sm text-[#F8F1E5] font-serif italic bg-[#191516]/60 px-3 py-1.5 rounded border border-[#C5A15A]/20 inline-block">
+            <span className="text-xs md:text-sm text-[#3A0715] font-serif italic bg-[#FAF7F2] px-3.5 py-1.5 rounded-lg border border-[#B88E3E]/30 inline-block font-medium">
               {event.dress_code}
             </span>
           </div>
@@ -153,10 +156,10 @@ export function EventDetailCard({ event, index }: EventDetailCardProps) {
             href={event.google_maps_url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs md:text-sm font-royal font-semibold text-[#F8F1E5] shadow-lg cursor-pointer transition-transform hover:scale-105 active:scale-95 ${themeStyles.button}`}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs md:text-sm font-royal font-bold shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95 ${themeStyles.button}`}
           >
-            <Navigation className="w-4 h-4 text-[#E6D2A0]" />
-            <span>Get Venue Directions</span>
+            <Navigation className="w-4 h-4" />
+            <span>Open Google Maps Directions</span>
           </a>
         </div>
       )}
