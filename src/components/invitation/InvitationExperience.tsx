@@ -146,6 +146,7 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
         <div className="pointer-events-none relative z-10 -mt-[100dvh]">
           <section
             id="entrance"
+            data-scroll-stage
             aria-labelledby="entrance-heading"
             className="relative flex min-h-dvh flex-col items-center px-5 pb-[10dvh] pt-[clamp(7.5rem,16vh,10rem)] text-center"
           >
@@ -189,6 +190,7 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
 
           <section
             id="introduction"
+            data-scroll-stage
             aria-labelledby="introduction-heading"
             className="relative flex min-h-dvh items-center justify-center px-4 py-16"
           >
@@ -217,6 +219,7 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
           <section
             id="rsvp"
             ref={rsvpRef}
+            data-scroll-stage
             aria-labelledby="rsvp-stage-heading"
             className="relative flex min-h-dvh items-center justify-center px-3 py-12 sm:px-5 sm:py-14"
           >
@@ -230,7 +233,10 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
                   The Celebration Awaits
                 </h2>
               </div>
-              <div className="mx-auto grid max-h-[86dvh] max-w-6xl gap-3 overflow-y-auto md:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)] md:items-center md:gap-5">
+              <div
+                data-scroll-content
+                className="mx-auto grid max-h-[86dvh] max-w-6xl gap-3 overflow-y-auto md:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)] md:items-center md:gap-5"
+              >
                 <ClosingBlessings wedding={wedding} compact />
                 <div className={showVipPass ? 'hidden' : 'block'}>
                   <RSVPForm
@@ -263,6 +269,7 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
           <section
             id="lantern-finale"
             ref={finaleRef}
+            data-scroll-stage
             aria-labelledby="finale-heading"
             className="relative flex min-h-dvh items-center justify-center px-4 py-16 text-center"
           >

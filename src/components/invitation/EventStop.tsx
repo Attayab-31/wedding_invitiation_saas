@@ -83,6 +83,7 @@ export function EventStop({
 
   return (
     <section
+      data-scroll-stage
       aria-labelledby={`event-stop-title-${index}`}
       className="pointer-events-auto relative flex min-h-[100dvh] items-center justify-center px-4 py-16"
     >
@@ -147,6 +148,7 @@ export function EventStop({
 
       <dialog
         ref={dialogRef}
+        data-scroll-content
         aria-labelledby={`event-dialog-title-${index}`}
         onClose={() => {
           setIsDialogOpen(false);
