@@ -17,39 +17,66 @@ if (typeof FileReader === 'undefined') {
 
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
-// Luxury Color Palette
-const COLOR_BURGUNDY = 0x3a0715;
-const COLOR_MAROON = 0x580f25;
-const COLOR_GOLD = 0xc5a15a;
-const COLOR_IVORY = 0xf8f1e5;
-const COLOR_GOLD_LIGHT = 0xe6d2a0;
+// Luxury Royal Pakistani Palette
+const COLOR_BURGUNDY_VELVET = 0x420816; // Deep Imperial Velvet Burgundy
+const COLOR_BURGUNDY_RICH = 0x540C1E;   // Royal Maroon
+const COLOR_GOLD_ANTIQUE = 0xC5A15A;    // Antique Gold Foil
+const COLOR_GOLD_CHAMPAGNE = 0xDFCA94;  // Champagne Gold Lining
+const COLOR_IVORY_PAPER = 0xFAF7F2;     // 600gsm Cotton Rag Paper
 
 // Root scene
 const scene = new THREE.Scene();
 scene.name = 'Luxury_Wedding_Invitation_Scene';
 
-// 1. Envelope Body
-// A refined pocket envelope with front folded flaps and interior pocket
 const envelopeGroup = new THREE.Group();
 envelopeGroup.name = 'Envelope_Root';
 scene.add(envelopeGroup);
 
 const bodyWidth = 3.6;
 const bodyHeight = 2.4;
-const bodyDepth = 0.08;
+
+// 1. Envelope Paper Materials
+const envelopePaperMaterial = new THREE.MeshStandardMaterial({
+  color: COLOR_BURGUNDY_VELVET,
+  roughness: 0.55,
+  metalness: 0.12,
+  name: 'Envelope_Paper_Mat',
+});
+
+const envelopeInnerLiningMat = new THREE.MeshStandardMaterial({
+  color: COLOR_GOLD_CHAMPAGNE,
+  roughness: 0.35,
+  metalness: 0.55,
+  name: 'Envelope_Inner_Lining_Mat',
+});
+
+const goldTrimMaterial = new THREE.MeshStandardMaterial({
+  color: COLOR_GOLD_ANTIQUE,
+  metalness: 0.9,
+  roughness: 0.2,
+  name: 'Antique_Gold_Foil_Mat',
+});
+
+const waxMaterial = new THREE.MeshStandardMaterial({
+  color: COLOR_BURGUNDY_RICH,
+  roughness: 0.3,
+  metalness: 0.2,
+  name: 'Burgundy_Wax_Mat',
+});
 
 // Envelope Back Plate
 const backGeometry = new THREE.BoxGeometry(bodyWidth, bodyHeight, 0.02);
-const envelopePaperMaterial = new THREE.MeshStandardMaterial({
-  color: COLOR_BURGUNDY,
-  roughness: 0.65,
-  metalness: 0.1,
-  name: 'Envelope_Paper_Mat',
-});
 const envelopeBack = new THREE.Mesh(backGeometry, envelopePaperMaterial);
 envelopeBack.name = 'Envelope_Body';
 envelopeBack.position.set(0, 0, -0.03);
 envelopeGroup.add(envelopeBack);
+
+// Luxury Gold Foil Inner Lining (revealed when flap opens and card lifts)
+const liningGeometry = new THREE.BoxGeometry(bodyWidth * 0.94, bodyHeight * 0.92, 0.005);
+const envelopeLining = new THREE.Mesh(liningGeometry, envelopeInnerLiningMat);
+envelopeLining.name = 'Envelope_Inner_Lining';
+envelopeLining.position.set(0, 0, -0.015);
+envelopeGroup.add(envelopeLining);
 
 // Envelope Pocket Front (Lower fold)
 const pocketGeometry = new THREE.BoxGeometry(bodyWidth, bodyHeight * 0.55, 0.02);
@@ -61,34 +88,27 @@ envelopeGroup.add(pocket);
 // Left Fold triangle
 const leftFoldShape = new THREE.Shape();
 leftFoldShape.moveTo(0, 0);
-leftFoldShape.lineTo(bodyWidth * 0.45, bodyHeight * 0.4);
-leftFoldShape.lineTo(0, bodyHeight * 0.8);
+leftFoldShape.lineTo(bodyWidth * 0.45, bodyHeight * 0.38);
+leftFoldShape.lineTo(0, bodyHeight * 0.78);
 leftFoldShape.closePath();
 const leftFoldGeo = new THREE.ShapeGeometry(leftFoldShape);
 const leftFold = new THREE.Mesh(leftFoldGeo, envelopePaperMaterial);
-leftFold.position.set(-bodyWidth * 0.5, -bodyHeight * 0.5, 0.02);
+leftFold.position.set(-bodyWidth * 0.5, -bodyHeight * 0.5, 0.022);
 envelopeGroup.add(leftFold);
 
 // Right Fold triangle
 const rightFoldShape = new THREE.Shape();
 rightFoldShape.moveTo(0, 0);
-rightFoldShape.lineTo(-bodyWidth * 0.45, bodyHeight * 0.4);
-rightFoldShape.lineTo(0, bodyHeight * 0.8);
+rightFoldShape.lineTo(-bodyWidth * 0.45, bodyHeight * 0.38);
+rightFoldShape.lineTo(0, bodyHeight * 0.78);
 rightFoldShape.closePath();
 const rightFoldGeo = new THREE.ShapeGeometry(rightFoldShape);
 const rightFold = new THREE.Mesh(rightFoldGeo, envelopePaperMaterial);
-rightFold.position.set(bodyWidth * 0.5, -bodyHeight * 0.5, 0.02);
+rightFold.position.set(bodyWidth * 0.5, -bodyHeight * 0.5, 0.022);
 envelopeGroup.add(rightFold);
 
-// Gold edge trim on envelope
-const goldTrimMaterial = new THREE.MeshStandardMaterial({
-  color: COLOR_GOLD,
-  metalness: 0.85,
-  roughness: 0.25,
-  name: 'Antique_Gold_Foil_Mat',
-});
-
-const trimTopGeo = new THREE.BoxGeometry(bodyWidth + 0.04, 0.015, 0.03);
+// Top edge gold foil trim
+const trimTopGeo = new THREE.BoxGeometry(bodyWidth + 0.04, 0.02, 0.03);
 const trimTop = new THREE.Mesh(trimTopGeo, goldTrimMaterial);
 trimTop.name = 'Gold_Ornament';
 trimTop.position.set(0, bodyHeight * 0.5, 0);
@@ -107,9 +127,9 @@ flapShape.lineTo(0, -bodyHeight * 0.65);
 flapShape.closePath();
 
 const flapExtrudeSettings = {
-  depth: 0.015,
+  depth: 0.016,
   bevelEnabled: true,
-  bevelSegments: 2,
+  bevelSegments: 3,
   steps: 1,
   bevelSize: 0.01,
   bevelThickness: 0.01,
@@ -131,21 +151,14 @@ flapTrimLineShape.closePath();
 const flapTrimGeo = new THREE.ShapeGeometry(flapTrimLineShape);
 const flapTrimMesh = new THREE.Mesh(flapTrimGeo, goldTrimMaterial);
 flapTrimMesh.name = 'Flap_Gold_Trim';
-flapTrimMesh.position.set(0, 0, 0.026);
+flapTrimMesh.position.set(0, 0, 0.028);
 flapPivot.add(flapTrimMesh);
 
-// 3. Wax Seal
+// 3. Wax Seal (Attached to Flap so it swings open realistically with the flap)
 const waxSealGroup = new THREE.Group();
 waxSealGroup.name = 'Wax_Seal';
-waxSealGroup.position.set(0, -bodyHeight * 0.65, 0.035);
+waxSealGroup.position.set(0, -bodyHeight * 0.65, 0.038);
 flapPivot.add(waxSealGroup);
-
-const waxMaterial = new THREE.MeshStandardMaterial({
-  color: COLOR_MAROON,
-  roughness: 0.35,
-  metalness: 0.15,
-  name: 'Burgundy_Wax_Mat',
-});
 
 // Irregular scalloped wax disc
 const sealDiscGeo = new THREE.CylinderGeometry(0.38, 0.42, 0.06, 32);
@@ -164,10 +177,10 @@ const monogramGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.02, 32);
 monogramGeo.rotateX(Math.PI / 2);
 const monogramMesh = new THREE.Mesh(monogramGeo, goldTrimMaterial);
 monogramMesh.name = 'Seal_Monogram';
-monogramMesh.position.z = 0.04;
+monogramMesh.position.z = 0.042;
 waxSealGroup.add(monogramMesh);
 
-// 4. Personalized Invitation Card
+// 4. Personalized Invitation Card (Positioned inside the envelope pocket)
 const cardGroup = new THREE.Group();
 cardGroup.name = 'Invitation_Card_Root';
 cardGroup.position.set(0, 0.05, 0.005);
@@ -177,8 +190,8 @@ const cardWidth = 3.3;
 const cardHeight = 2.2;
 const cardGeo = new THREE.BoxGeometry(cardWidth, cardHeight, 0.015);
 const cardMaterial = new THREE.MeshStandardMaterial({
-  color: COLOR_IVORY,
-  roughness: 0.7,
+  color: COLOR_IVORY_PAPER,
+  roughness: 0.65,
   metalness: 0.05,
   name: 'Ivory_Card_Mat',
 });
@@ -208,7 +221,7 @@ cardBorderMesh.name = 'Card_Gold_Border';
 cardBorderMesh.position.set(0, 0, 0.01);
 cardGroup.add(cardBorderMesh);
 
-// 5. Rose Petal Sample Geometry for instancing / reference
+// 5. Rose Petal Geometry
 const petalShape = new THREE.Shape();
 petalShape.moveTo(0, 0);
 petalShape.bezierCurveTo(0.1, 0.15, 0.2, 0.35, 0.12, 0.5);
@@ -225,7 +238,7 @@ const petalMat = new THREE.MeshStandardMaterial({
 const petalMesh = new THREE.Mesh(petalGeo, petalMat);
 petalMesh.name = 'Rose_Petal';
 petalMesh.scale.set(0.6, 0.6, 0.6);
-petalMesh.position.set(0, -3, 0); // Positioned offstage for template reference
+petalMesh.position.set(0, -3, 0);
 scene.add(petalMesh);
 
 // Export to binary GLB

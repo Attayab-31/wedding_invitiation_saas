@@ -25,112 +25,117 @@ export function EnvelopeModel({
   const cardRootRef = useRef<THREE.Group | null>(null);
   const cardMeshRef = useRef<THREE.Mesh | null>(null);
 
-  // Mouse tilt target
+  // Mouse tilt target for smooth physical parallax
   const targetRotation = useRef({ x: 0, y: 0 });
 
   // Load the 3D GLB model
   const { scene } = useGLTF('/models/luxury_envelope.glb');
 
-  // Clone scene so multiple instances or re-mounts don't clash
+  // Clone scene so multiple mounts or re-renders don't clash
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
 
-  // Create High-Res Canvas Texture for the Personalized Card
+  // High-Resolution 2048x1440 Canvas Texture for Hot-Foil Letterpress Card
   const cardTexture = useMemo(() => {
     if (typeof document === 'undefined') return null;
 
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 720;
+    canvas.width = 2048;
+    canvas.height = 1440;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    // Background Warm Ivory
-    ctx.fillStyle = '#F8F1E5';
+    // Base: 600gsm Heavy Warm Ivory Cotton Paper
+    ctx.fillStyle = '#FAF7F2';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Subtle paper noise / vignette
-    const gradient = ctx.createRadialGradient(512, 360, 100, 512, 360, 600);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-    gradient.addColorStop(1, 'rgba(217, 198, 165, 0.35)');
-    ctx.fillStyle = gradient;
+    // Subtle paper grain vignette
+    const radGradient = ctx.createRadialGradient(1024, 720, 200, 1024, 720, 1200);
+    radGradient.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+    radGradient.addColorStop(1, 'rgba(235, 224, 205, 0.45)');
+    ctx.fillStyle = radGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Double Gold Foil Border
+    // Double Antique Gold Foil Hairline Border
     ctx.strokeStyle = '#C5A15A';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
+    ctx.lineWidth = 8;
+    ctx.strokeRect(60, 60, canvas.width - 120, canvas.height - 120);
 
-    ctx.lineWidth = 2;
-    ctx.strokeRect(44, 44, canvas.width - 88, canvas.height - 88);
+    ctx.strokeStyle = '#DFCA94';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(84, 84, canvas.width - 168, canvas.height - 168);
 
-    // Decorative Corner Motifs
+    // Corner Arabesque Rosettes
     ctx.fillStyle = '#C5A15A';
-    const corners = [
-      [56, 56],
-      [canvas.width - 56, 56],
-      [56, canvas.height - 56],
-      [canvas.width - 56, canvas.height - 56],
+    const cornerPositions = [
+      [110, 110],
+      [canvas.width - 110, 110],
+      [110, canvas.height - 110],
+      [canvas.width - 110, canvas.height - 110],
     ];
-    corners.forEach(([x, y]) => {
+    cornerPositions.forEach(([x, y]) => {
       ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    // Bismillah / Header Calligraphy
-    ctx.font = 'italic 26px Georgia, serif';
-    ctx.fillStyle = '#580F25';
+    // Bismillah Calligraphy (Deep Burgundy)
+    ctx.font = 'italic 52px Georgia, serif';
+    ctx.fillStyle = '#4A081A';
     ctx.textAlign = 'center';
-    ctx.fillText('بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ', 512, 105);
+    ctx.fillText('بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ', 1024, 210);
 
-    // Family invitation lead
-    ctx.font = '300 16px "Times New Roman", serif';
+    // Invitation Header
+    ctx.font = '300 32px "Times New Roman", serif';
     ctx.fillStyle = '#6B4E3D';
-    ctx.fillText('TOGETHER WITH THEIR FAMILIES', 512, 160);
+    ctx.letterSpacing = '6px';
+    ctx.fillText('TOGETHER WITH THEIR FAMILIES', 1024, 320);
 
-    // Couple Names
-    ctx.font = 'bold 46px Georgia, serif';
+    // Couple Names (Majestic Burgundy Serif)
+    ctx.font = 'bold 92px Georgia, serif';
     ctx.fillStyle = '#3A0715';
-    ctx.fillText(coupleNames || 'Ahad & Maryam', 512, 230);
+    ctx.fillText(coupleNames || 'Ahad & Maryam', 1024, 460);
 
-    ctx.font = 'italic 19px Georgia, serif';
+    ctx.font = 'italic 38px Georgia, serif';
     ctx.fillStyle = '#8C6D3B';
-    ctx.fillText('Request the honour of your gracious presence', 512, 285);
+    ctx.fillText('Request the honour of your gracious presence', 1024, 570);
 
-    // Decorative gold separator line
+    // Gold Divider Line
     ctx.strokeStyle = '#C5A15A';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(340, 320);
-    ctx.lineTo(684, 320);
+    ctx.moveTo(680, 640);
+    ctx.lineTo(1368, 640);
     ctx.stroke();
 
+    // Guest Name Title
+    ctx.font = '300 30px "Times New Roman", serif';
+    ctx.fillStyle = '#8C6D3B';
+    ctx.fillText('ESPECIALLY INVITED', 1024, 730);
+
     // Prominent Guest Personalized Name
-    ctx.font = '300 16px "Times New Roman", serif';
-    ctx.fillStyle = '#8C6D3B';
-    ctx.fillText('ESPECIALLY INVITED', 512, 365);
-
-    ctx.font = 'bold 38px Georgia, serif';
+    ctx.font = 'bold 78px Georgia, serif';
     ctx.fillStyle = '#3A0715';
-    ctx.fillText(guestName || 'Honoured Guest', 512, 420);
+    ctx.fillText(guestName || 'Honoured Guest', 1024, 840);
 
-    // Gold accent frame around guest name
-    ctx.strokeStyle = 'rgba(197, 161, 90, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(220, 380, 584, 58);
+    // Subtle Gold Border Box around Guest Name
+    ctx.strokeStyle = 'rgba(197, 161, 90, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(440, 760, 1168, 116);
 
-    // Date & Venue
-    ctx.font = '400 16px "Times New Roman", serif';
+    // Date & Venue Details
+    ctx.font = '400 34px "Times New Roman", serif';
     ctx.fillStyle = '#6B4E3D';
-    ctx.fillText('DECEMBER 2026 • LAHORE, PAKISTAN', 512, 510);
+    ctx.fillText('DECEMBER 2026 • LAHORE, PAKISTAN', 1024, 1030);
 
-    ctx.font = 'italic 16px Georgia, serif';
+    ctx.font = 'italic 32px Georgia, serif';
     ctx.fillStyle = '#8C6D3B';
-    ctx.fillText('Awaiting the pleasure of celebrating with you', 512, 555);
+    ctx.fillText('Awaiting the pleasure of celebrating with you', 1024, 1120);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 8;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = 16;
     return texture;
   }, [guestName, coupleNames]);
 
@@ -153,18 +158,18 @@ export function EnvelopeModel({
       }
     });
 
-    // Apply custom personalized texture to the card
+    // Apply high-res texture to the card
     if (cardMeshRef.current && cardTexture) {
       const cardMat = new THREE.MeshStandardMaterial({
         map: cardTexture,
-        roughness: 0.45,
-        metalness: 0.1,
+        roughness: 0.5,
+        metalness: 0.08,
       });
       cardMeshRef.current.material = cardMat;
     }
   }, [clonedScene, cardTexture]);
 
-  // GSAP Animation when isOpen toggles
+  // Realistic Physical Kinematic Animation
   useEffect(() => {
     if (!flapPivotRef.current || !cardRootRef.current) return;
 
@@ -175,72 +180,62 @@ export function EnvelopeModel({
     if (isOpen) {
       const tl = gsap.timeline();
 
-      // 1. Wax Seal Pop & Fade
+      // 1. Subtle physical unsealing lift of the wax seal
       if (seal) {
-        tl.to(seal.scale, {
-          x: 1.15,
-          y: 1.15,
-          z: 1.15,
+        tl.to(seal.position, {
+          z: 0.055,
           duration: 0.25,
           ease: 'power2.out',
-        }).to(seal.scale, {
-          x: 0,
-          y: 0,
-          z: 0,
-          duration: 0.35,
-          ease: 'power2.in',
-        }, '>-0.05');
+        });
       }
 
-      // 2. Flap rotates open around X axis
+      // 2. Flap rotates open around top hinge (Wax seal stays firmly on flap tip and swings up with it)
       tl.to(flap.rotation, {
-        x: -Math.PI * 0.96,
+        x: -Math.PI * 0.94,
         duration: 1.1,
         ease: 'power3.inOut',
-      }, '>-0.2');
+      }, '>-0.1');
 
-      // 3. Card slides up & tilts forward for prominent readability
+      // 3. Card slides up out of the pocket and tilts toward the viewer
       tl.to(card.position, {
-        y: 1.65,
-        z: 0.32,
-        duration: 1.3,
+        y: 1.7,
+        z: 0.35,
+        duration: 1.25,
         ease: 'power3.out',
-      }, '>-0.5')
+      }, '>-0.45')
       .to(card.rotation, {
-        x: -0.08,
-        duration: 1.3,
+        x: -0.06,
+        duration: 1.25,
         ease: 'power2.out',
       }, '<');
 
     } else {
-      // Reversible closure
+      // Reversible smooth closure
       const tl = gsap.timeline();
 
       tl.to(card.position, {
         y: 0.05,
         z: 0.005,
-        duration: 0.9,
+        duration: 0.85,
         ease: 'power3.in',
       })
       .to(card.rotation, {
         x: 0,
-        duration: 0.9,
+        duration: 0.85,
       }, '<');
 
       tl.to(flap.rotation, {
         x: 0,
         duration: 0.8,
         ease: 'power3.inOut',
-      }, '>-0.1');
+      }, '>-0.15');
 
       if (seal) {
-        tl.to(seal.scale, {
-          x: 1,
-          y: 1,
-          z: 1,
-          duration: 0.4,
-          ease: 'back.out(1.7)',
-        });
+        tl.to(seal.position, {
+          z: 0.038,
+          duration: 0.3,
+          ease: 'power2.inOut',
+        }, '>-0.1');
       }
     }
   }, [isOpen]);
@@ -252,8 +247,8 @@ export function EnvelopeModel({
       const x = (e.clientX / innerWidth - 0.5) * 2;
       const y = (e.clientY / innerHeight - 0.5) * 2;
       targetRotation.current = {
-        x: -y * 0.12,
-        y: x * 0.18,
+        x: -y * 0.1,
+        y: x * 0.16,
       };
     };
 
@@ -266,10 +261,10 @@ export function EnvelopeModel({
     if (!rootGroup.current) return;
 
     // Gentle floating bob
-    const floatOffset = Math.sin(state.clock.elapsedTime * 1.5) * 0.06;
+    const floatOffset = Math.sin(state.clock.elapsedTime * 1.4) * 0.05;
     rootGroup.current.position.y = floatOffset;
 
-    // Smooth lerp to mouse tilt
+    // Smooth dampening to pointer tilt
     rootGroup.current.rotation.x = THREE.MathUtils.damp(
       rootGroup.current.rotation.x,
       targetRotation.current.x,

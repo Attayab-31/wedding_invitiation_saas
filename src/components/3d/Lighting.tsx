@@ -1,18 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
+import { Environment } from '@react-three/drei';
 
 export function Lighting() {
   return (
     <>
-      {/* Warm Ambient Fill */}
-      <ambientLight intensity={1.2} color="#FFF8EE" />
+      {/* Warm Ambient Studio Fill */}
+      <ambientLight intensity={1.3} color="#FFFBF5" />
 
-      {/* Main Studio Key Light with soft shadows */}
+      {/* Main Studio Key Light for Paper Shadows */}
       <directionalLight
         position={[4, 6, 5]}
-        intensity={2.2}
-        color="#FFEBD2"
+        intensity={2.4}
+        color="#FFEED6"
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
@@ -22,17 +23,22 @@ export function Lighting() {
         shadow-camera-right={4}
         shadow-camera-top={4}
         shadow-camera-bottom={-4}
-        shadow-bias={-0.0005}
+        shadow-bias={-0.0004}
       />
 
-      {/* Golden Rim Light for metallic specular glints */}
-      <directionalLight position={[-4, 3, -2]} intensity={2.5} color="#FFD700" />
+      {/* Specular Golden Rim Light for metallic foil glints */}
+      <directionalLight position={[-4, 3, -2]} intensity={2.6} color="#FFD700" />
 
-      {/* Soft warm uplight */}
-      <directionalLight position={[0, -4, 2]} intensity={0.8} color="#C5A15A" />
+      {/* Warm lower bounce fill */}
+      <directionalLight position={[0, -4, 2]} intensity={0.9} color="#DFCA94" />
 
-      {/* Front soft light for crisp card visibility */}
-      <pointLight position={[0, 0, 4]} intensity={1.0} color="#FFFFFF" distance={8} />
+      {/* Subtle front light for card clarity */}
+      <pointLight position={[0, 0, 4]} intensity={1.1} color="#FFFFFF" distance={8} />
+
+      {/* HDR Environment Reflections for Metallic Gold & Wax Sheen */}
+      <Suspense fallback={null}>
+        <Environment preset="city" environmentIntensity={0.65} />
+      </Suspense>
     </>
   );
 }

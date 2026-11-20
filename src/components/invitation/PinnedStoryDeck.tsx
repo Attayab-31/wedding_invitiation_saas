@@ -28,12 +28,11 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
 
   // Deck sequence:
   // 0: Invocation & Family Introduction
-  // 1..events.length: Each permitted ceremony
+  // 1..events.length: Each permitted ceremony (Mehndi, Barat, Walima)
   // events.length + 1: RSVP Form
   // events.length + 2: Countdown & Blessings
   const totalSteps = 1 + events.length + 1 + 1;
 
-  // Minimal Roman Numeral Chapters
   const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   const stepTitles = [
     'Invocation',
@@ -48,17 +47,34 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
     const cards = cardsRef.current.filter(Boolean) as HTMLDivElement[];
     if (cards.length === 0) return;
 
-    // Reset initial states: card 0 visible, rest hidden
+    // Initialize 3D perspective on cards: Card 0 visible flat, rest prepared below
     cards.forEach((card, index) => {
       if (index === 0) {
-        gsap.set(card, { opacity: 1, scale: 1, y: 0, pointerEvents: 'auto', zIndex: 10 });
+        gsap.set(card, {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          rotateX: 0,
+          transformPerspective: 1200,
+          pointerEvents: 'auto',
+          zIndex: 10,
+        });
       } else {
-        gsap.set(card, { opacity: 0, scale: 0.94, y: 50, pointerEvents: 'none', zIndex: 1 });
+        gsap.set(card, {
+          opacity: 0,
+          scale: 0.95,
+          y: 70,
+          rotateX: -8,
+          transformPerspective: 1200,
+          pointerEvents: 'none',
+          zIndex: 1,
+        });
       }
     });
 
     const ctx = gsap.context(() => {
-      const scrollDistance = (cards.length - 1) * 1100;
+      // 1200px scroll depth per card transition for fluid, tactile response
+      const scrollDistance = (cards.length - 1) * 1200;
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -66,14 +82,14 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
           start: 'top top',
           end: `+=${scrollDistance}`,
           pin: deckWrapperRef.current,
-          scrub: 0.7,
+          scrub: 0.8,
           anticipatePin: 1,
           snap: {
             snapTo: (value) => {
               const step = 1 / (cards.length - 1);
               return Math.round(value / step) * step;
             },
-            duration: { min: 0.2, max: 0.45 },
+            duration: { min: 0.25, max: 0.5 },
             ease: 'power2.inOut',
           },
           onUpdate: (self) => {
@@ -86,35 +102,37 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
         },
       });
 
-      // Chain clean in-place transitions
+      // Realistic physical card lift & settle animation chain
       for (let i = 0; i < cards.length - 1; i++) {
         const currentCard = cards[i];
         const nextCard = cards[i + 1];
 
         const stepStartTime = i * 1.5;
 
-        // Outgoing card
+        // Departing card: lifts up and tilts away on perspective like lifting stationery paper
         tl.to(
           currentCard,
           {
             opacity: 0,
             scale: 0.92,
-            y: -40,
+            y: -75,
+            rotateX: 10,
             pointerEvents: 'none',
             zIndex: 1,
-            duration: 0.75,
+            duration: 0.8,
             ease: 'power2.in',
           },
           stepStartTime
         );
 
-        // Incoming card in place
+        // Arriving card: glides up into place, un-tilts, and settles flat
         tl.fromTo(
           nextCard,
           {
             opacity: 0,
-            scale: 0.94,
-            y: 40,
+            scale: 0.95,
+            y: 75,
+            rotateX: -10,
             pointerEvents: 'none',
             zIndex: 10,
           },
@@ -122,8 +140,9 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
             opacity: 1,
             scale: 1,
             y: 0,
+            rotateX: 0,
             pointerEvents: 'auto',
-            duration: 0.75,
+            duration: 0.8,
             ease: 'power2.out',
           },
           stepStartTime + 0.35
@@ -141,7 +160,7 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
 
   const scrollToStep = (stepIndex: number) => {
     if (!containerRef.current) return;
-    const scrollDistance = (totalSteps - 1) * 1100;
+    const scrollDistance = (totalSteps - 1) * 1200;
     const targetOffset = containerRef.current.offsetTop + (stepIndex / (totalSteps - 1)) * scrollDistance;
     window.scrollTo({ top: targetOffset, behavior: 'smooth' });
   };
@@ -155,7 +174,7 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
         height: `${totalSteps * 100}vh`,
       }}
     >
-      {/* Pinned Stage Wrapper */}
+      {/* Pinned Stage Wrapper (Stays fixed in viewport while scrolling through all cards) */}
       <div
         ref={deckWrapperRef}
         className="w-full h-screen sticky top-0 flex flex-col justify-between items-center py-6 px-4 overflow-hidden"
@@ -181,12 +200,15 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
           })}
         </div>
 
-        {/* Central Stage */}
-        <div className="relative w-full max-w-3xl flex-1 flex items-center justify-center my-auto">
-          {/* Card 0: Introduction Card */}
+        {/* Central Stage: Cards stacked on top of each other in 3D perspective */}
+        <div
+          className="relative w-full max-w-3xl flex-1 flex items-center justify-center my-auto"
+          style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
+        >
+          {/* Card 0: Invocation & Introduction Card */}
           <div
             ref={(el) => { cardsRef.current[0] = el; }}
-            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto stationery-card gold-corners p-8 md:p-12 rounded-2xl text-center shadow-xl"
+            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto stationery-card gold-corners p-8 md:p-12 rounded-2xl text-center shadow-xl will-change-transform"
           >
             <div className="mb-4">
               <p className="font-serif italic text-3xl md:text-4xl text-burgundy-gradient tracking-wide mb-1">
@@ -245,7 +267,7 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
             <div
               key={event.id}
               ref={(el) => { cardsRef.current[1 + idx] = el; }}
-              className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto"
+              className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto will-change-transform"
             >
               <EventDetailCard event={event} index={idx} />
             </div>
@@ -254,7 +276,7 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
           {/* Card events.length + 1: RSVP Form Card */}
           <div
             ref={(el) => { cardsRef.current[1 + events.length] = el; }}
-            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto"
+            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto will-change-transform"
           >
             <RSVPForm token={token} guestName={guest.display_name} events={events} />
           </div>
@@ -262,7 +284,7 @@ export function PinnedStoryDeck({ experience, token }: PinnedStoryDeckProps) {
           {/* Card events.length + 2: Countdown & Closing Blessings Card */}
           <div
             ref={(el) => { cardsRef.current[1 + events.length + 1] = el; }}
-            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto"
+            className="absolute inset-x-0 mx-auto w-full max-h-[82vh] overflow-y-auto will-change-transform"
           >
             <ClosingBlessings wedding={wedding} />
           </div>
