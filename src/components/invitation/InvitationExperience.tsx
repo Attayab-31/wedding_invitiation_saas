@@ -197,15 +197,32 @@ function InvitationJourney({ experience }: InvitationExperienceProps) {
           </section>
 
           {events.map((event, index) => (
-            <EventStop
-              key={event.id}
-              event={event}
-              index={index}
-              onModalVisibilityChange={setLocked}
-              isAudioMuted={isAudioMuted}
-              audioUnavailable={audioUnavailable}
-              onToggleAudio={toggleAudio}
-            />
+            <React.Fragment key={event.id}>
+              <section
+                data-scroll-stage
+                aria-labelledby={`event-walk-title-${index}`}
+                className="pointer-events-none relative flex min-h-dvh items-end justify-center px-4 pb-[8dvh]"
+              >
+                <h2 id={`event-walk-title-${index}`} className="sr-only">
+                  Courtyard walk toward {event.title}
+                </h2>
+                <div
+                  aria-hidden="true"
+                  className="flex items-center gap-2 font-royal text-[9px] uppercase tracking-[0.2em] text-[#F8E8C4]/75"
+                >
+                  Continue the walk
+                  <ArrowDown className="h-3.5 w-3.5 animate-bounce" />
+                </div>
+              </section>
+              <EventStop
+                event={event}
+                index={index}
+                onModalVisibilityChange={setLocked}
+                isAudioMuted={isAudioMuted}
+                audioUnavailable={audioUnavailable}
+                onToggleAudio={toggleAudio}
+              />
+            </React.Fragment>
           ))}
 
           <section

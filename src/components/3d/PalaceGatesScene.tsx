@@ -183,7 +183,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
     });
     return new THREE.CatmullRomCurve3(points);
   }, []);
-  const archZ = -15 - index * 6;
+  const archZ = -21 - index * 12;
 
   return (
     <group position={[0, 0, archZ]}>
@@ -342,7 +342,7 @@ function LanternFinale({
   events: InvitationEvent[];
 }) {
   const startTimeRef = useRef<number | null>(null);
-  const finaleZ = 3 - (events.length + 3) * 6;
+  const finaleZ = 3 - (events.length * 2 + 3) * 6;
 
   useEffect(() => {
     if (!active) startTimeRef.current = null;
@@ -391,7 +391,7 @@ export function PalaceGatesScene({
     1,
     (2 * 8 * Math.tan((42 * Math.PI) / 360) * aspect) / 5.4
   );
-  const pathLength = 54 + events.length * 8;
+  const pathLength = 54 + events.length * 12;
   const ambientColor = useMemo(() => new THREE.Color('#FFE7C2'), []);
   const targetColor = useMemo(() => new THREE.Color(), []);
   const backgroundColor = useMemo(() => new THREE.Color('#201711'), []);
@@ -400,8 +400,9 @@ export function PalaceGatesScene({
   const directionalLightRef = useRef<THREE.DirectionalLight>(null);
   const welcomePlaqueRef = useRef<THREE.Group>(null);
   const welcomePlaqueMaterialsRef = useRef<THREE.Material[]>([]);
-  const introProgress = 1 / (events.length + 3);
-  const firstEventProgress = 2 / (events.length + 3);
+  const scrollStops = events.length * 2 + 3;
+  const introProgress = 1 / scrollStops;
+  const firstEventProgress = 2 / scrollStops;
   const archCurve = useMemo(() => {
     const points = Array.from({ length: 25 }, (_, index) => {
       const angle = Math.PI - (Math.PI * index) / 24;
@@ -611,7 +612,7 @@ export function PalaceGatesScene({
           <EventArch key={event.id} event={event} index={index} />
         ))}
 
-        <group position={[0, 0, -14 - events.length * 6]}>
+        <group position={[0, 0, -15 - events.length * 12]}>
           {[-1, 1].map((side) => (
             <mesh key={side} position={[side * 2.25, 2.1, 0]} castShadow>
               <cylinderGeometry args={[0.22, 0.3, 4.2, 12]} />

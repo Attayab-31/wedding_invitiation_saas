@@ -105,8 +105,8 @@ function CameraController({
       return;
     }
 
-    const endZ = 3 - (events.length + 3) * 6;
-    const scrollStops = events.length + 3;
+    const scrollStops = events.length * 2 + 3;
+    const endZ = 3 - scrollStops * 6;
     const tween = gsap.fromTo(
       camera.position,
       { z: 3 },
@@ -118,13 +118,6 @@ function CameraController({
           start: 'top top',
           end: 'bottom bottom',
           scrub: 0.65,
-          snap: {
-            snapTo: (progress) => Math.round(progress * scrollStops) / scrollStops,
-            duration: { min: 0.2, max: 0.7 },
-            delay: 0.08,
-            ease: 'power1.inOut',
-            inertia: false,
-          },
           invalidateOnRefresh: true,
           onUpdate: (trigger) => {
             progressRef.current = trigger.progress;

@@ -87,9 +87,15 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     if (!target) return;
 
     isNavigatingRef.current = true;
+    let navigationTimeout: number | null = null;
     const finishNavigation = () => {
+      if (navigationTimeout !== null) {
+        window.clearTimeout(navigationTimeout);
+        navigationTimeout = null;
+      }
       isNavigatingRef.current = false;
     };
+    navigationTimeout = window.setTimeout(finishNavigation, 1800);
     const lenis = lenisRef.current;
     if (lenis) {
       lenis.scrollTo(target, {
@@ -100,7 +106,6 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     } else {
       const top = target.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({ top, behavior: 'smooth' });
-      window.setTimeout(finishNavigation, 1300);
     }
   }, []);
 
