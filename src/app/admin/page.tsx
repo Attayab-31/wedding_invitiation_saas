@@ -4,11 +4,7 @@ import {
   Users,
   Send,
   Eye,
-  CheckCircle2,
-  XCircle,
-  Calendar,
   Sparkles,
-  ArrowUpRight,
   MessageCircle,
 } from 'lucide-react';
 
@@ -28,7 +24,7 @@ export default async function AdminOverviewPage() {
             {wedding.title}
           </h1>
           <p className="text-xs text-[#E6D2A0]/80 font-serif italic mt-1">
-            Personalized guest invitations • Function access controls • Real-time RSVP tracking
+            Personalized guest invitations • Function access controls • Invitation engagement
           </p>
         </div>
 
@@ -51,7 +47,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Guests */}
         <div className="p-4 rounded-xl bg-[#23050E]/80 border border-[#C5A15A]/30 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#C5A15A] mb-2">
@@ -88,57 +84,21 @@ export default async function AdminOverviewPage() {
           <span className="text-[10px] text-[#E6D2A0]/70 mt-1">Engaged with 3D envelope</span>
         </div>
 
-        {/* Total Responses */}
-        <div className="p-4 rounded-xl bg-[#23050E]/80 border border-[#C5A15A]/30 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#C5A15A] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-royal font-medium">Responses</span>
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <span className="text-2xl font-royal font-bold text-[#F8F1E5]">
-            {metrics.respondedGuests}
-          </span>
-          <span className="text-[10px] text-[#E6D2A0]/70 mt-1">Guests replied</span>
-        </div>
-
-        {/* Confirmed Headcount */}
-        <div className="p-4 rounded-xl bg-gradient-to-br from-[#1E3A20]/80 to-[#23050E]/80 border border-emerald-500/40 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-emerald-400 mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-royal font-medium">Attending</span>
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <span className="text-2xl font-royal font-bold text-emerald-300">
-            {metrics.totalConfirmedAttendees}
-          </span>
-          <span className="text-[10px] text-emerald-200/70 mt-1">Total seats reserved</span>
-        </div>
-
-        {/* Declined */}
-        <div className="p-4 rounded-xl bg-[#23050E]/80 border border-red-900/40 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-red-400 mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-royal font-medium">Declined</span>
-            <XCircle className="w-4 h-4" />
-          </div>
-          <span className="text-2xl font-royal font-bold text-red-300">
-            {metrics.declinedRSVPs}
-          </span>
-          <span className="text-[10px] text-red-200/70 mt-1">Unable to attend</span>
-        </div>
       </div>
 
       {/* Event Breakdown Cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-royal font-bold text-gold-gradient">
-            Function-Wise Attendance Breakdown
+            Guest Access by Function
           </h2>
           <span className="text-xs text-[#E6D2A0]/70 font-serif italic">
-            Reflects individual guest permissions and RSVP responses
+            Guest counts reflect invitation permissions
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {metrics.eventBreakdown.map((item) => {
-            const pct = item.totalCapacity > 0 ? Math.round((item.confirmedAttendees / item.totalCapacity) * 100) : 0;
             return (
               <div
                 key={item.event.id}
@@ -164,31 +124,9 @@ export default async function AdminOverviewPage() {
                   {item.event.venue_name}
                 </p>
 
-                {/* Progress bar */}
-                <div className="space-y-1.5 pt-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#E6D2A0]/80 font-medium">Confirmed Attendees</span>
-                    <span className="text-[#C5A15A] font-bold">
-                      {item.confirmedAttendees} / {item.totalCapacity} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#191516] rounded-full h-2 overflow-hidden border border-[#C5A15A]/20">
-                    <div
-                      className="bg-gradient-to-r from-[#C5A15A] to-[#E6D2A0] h-full rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min(100, pct)}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#C5A15A]/20 text-xs">
-                  <div>
-                    <span className="block text-[10px] uppercase text-[#E6D2A0]/60">Invited Guests</span>
-                    <span className="font-royal font-bold text-[#F8F1E5]">{item.invitedGuestCount}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] uppercase text-[#E6D2A0]/60">Declined</span>
-                    <span className="font-royal font-bold text-red-300">{item.declinedCount}</span>
-                  </div>
+                <div className="pt-3 border-t border-[#C5A15A]/20 text-xs">
+                  <span className="block text-[10px] uppercase text-[#E6D2A0]/60">Invited Guests</span>
+                  <span className="font-royal font-bold text-[#F8F1E5]">{item.invitedGuestCount}</span>
                 </div>
               </div>
             );

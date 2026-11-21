@@ -6,7 +6,6 @@ interface ImportRow {
   name: string;
   phone: string;
   allowedEvents: string[]; // event types: 'mehndi', 'barat', 'walima'
-  maxAttendees: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -51,14 +50,11 @@ export async function POST(req: NextRequest) {
         events.forEach((e) => matchedEventIds.push(e.id));
       }
 
-      const maxAttendees = Math.max(1, Number(row.maxAttendees) || 1);
-
       try {
         const { guest, token } = await DatabaseService.addGuest({
           displayName: row.name.trim(),
           phone: phoneCheck.normalized,
           allowedEventIds: matchedEventIds,
-          maxAttendees,
           notes: 'Imported via CSV batch',
         });
 
@@ -67,7 +63,6 @@ export async function POST(req: NextRequest) {
           name: guest.display_name,
           phone: guest.phone,
           token,
-          maxAttendees,
           allowedEvents: row.allowedEvents,
         });
       } catch (err: any) {

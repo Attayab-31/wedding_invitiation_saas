@@ -19,7 +19,7 @@ A bespoke, production-ready digital wedding invitation experience crafted specif
 - **Instanced Petal Flutter**: 42+ organic rose, maroon, and marigold petals drifting with physics-like aerodynamic rotation.
 - **Ambient Gold Shimmer**: Upward twinkling gold glitter particles.
 - **Interactive Parallax**: Pointer and touch-responsive gyroscope tilt highlights specular metallic reflections.
-- **Graceful WebGL Fallback**: If WebGL is unavailable or hardware acceleration is disabled, an ultra-luxury 3D CSS folded origami envelope ensures 100% of the invitation and RSVP functionality remains interactive.
+- **Graceful WebGL Fallback**: If WebGL is unavailable or hardware acceleration is disabled, an ultra-luxury 3D CSS folded origami envelope keeps the invitation experience interactive.
 
 ---
 
@@ -31,8 +31,6 @@ A bespoke, production-ready digital wedding invitation experience crafted specif
   - **Guest 2 ("Mr. Muhammad Ali")**: Invited to **Barat only** (Mehndi and Walima are restricted).
   - **Guest 3 ("Usman Khan & Family")**: Invited to **all 3 functions** (Mehndi, Barat, Walima).
   - **Guest 4 ("Sarah Jenkins & Guest")**: Invited to **Walima only**.
-- **Server-Side Enforcement**: Even if an unauthorized event ID is submitted to `/api/rsvp`, the server checks `guest_event_access` and rejects the request with HTTP 403.
-- **Headcount Limit Boundary**: Headcount cannot exceed the guest's assigned `max_attendees` limit for each specific event.
 
 ---
 
@@ -65,11 +63,11 @@ A bespoke, production-ready digital wedding invitation experience crafted specif
 ### 5. Administration Dashboard
 Accessible at [`/admin`](file:///E:/wedding_invitiation/src/app/admin):
 1. **Overview Dashboard**:
-   - Total guests, invitations dispatched, invitations opened, total RSVPs, confirmed headcounts, declined count.
-   - Function-wise progress bars showing capacity utilization (Mehndi, Barat, Walima).
+   - Total guests, invitations dispatched, and invitations opened.
+   - Guest invitation permissions by function (Mehndi, Barat, Walima).
 2. **Guest Registry** (`/admin/guests`):
    - Search by guest name or phone.
-   - Filter by function permissions or invitation status (created, sent, opened, responded, revoked).
+   - Filter by function permissions or invitation status (created, sent, opened, revoked).
    - Add new guest with custom function access.
    - One-click copy invite link, test live 3D view, regenerate token, or revoke access.
 3. **Bulk CSV Importer** (`/admin/import`):
@@ -83,8 +81,6 @@ Accessible at [`/admin`](file:///E:/wedding_invitiation/src/app/admin):
    - Direct `wa.me/923001234567?text=...` dispatch buttons.
    - One-click copy message, copy link, and mark as sent.
    - Export WhatsApp blast CSV.
-5. **RSVP & Catering Reports** (`/admin/rsvps`):
-   - Table of all submitted RSVPs, attendee headcounts, dietary requirements (vegetarian, allergies), and heartfelt wishes.
 
 ---
 
@@ -118,7 +114,7 @@ node scripts/generate-envelope-glb.mjs
 This outputs `public/models/luxury_envelope.glb` with the exact named nodes and pivot hierarchies.
 
 ### 3. Run Automated Test Suite
-Run the 13 automated tests verifying token generation, SHA-256 hashing, phone normalizers, event permission filters, and RSVP boundary limits:
+Run the 10 automated tests verifying token generation, SHA-256 hashing, phone normalizers, and event permission filters:
 ```bash
 npx tsx scripts/test-suite.mjs
 ```
@@ -168,4 +164,6 @@ When deploying to Supabase Cloud:
 - **Hashed Storage**: Only the SHA-256 hash is stored in the database.
 - **Timing Attack Defense**: Employs `crypto.timingSafeEqual`.
 - **Zero Table Dumping**: The `guests` table is protected by Row Level Security (RLS) so anonymous clients cannot dump or harvest guest contact records.
-- **Input Validation**: All endpoints enforce strict Zod schemas and server-side headcount boundary limits.
+- **Input Validation**: Admin endpoints validate guest identity, phone numbers, and permitted event selections.
+
+Guest RSVP collection and reporting are not part of the application flow. Existing RSVP database tables and historical records are retained.

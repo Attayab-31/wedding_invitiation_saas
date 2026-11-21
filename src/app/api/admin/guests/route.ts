@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { displayName, phone, allowedEventIds, maxAttendees, notes } = body;
+    const { displayName, phone, allowedEventIds, notes } = body;
 
     if (!displayName || !displayName.trim()) {
       return NextResponse.json({ success: false, error: 'Display name is required' }, { status: 400 });
@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
       displayName: displayName.trim(),
       phone: phoneCheck.normalized,
       allowedEventIds,
-      maxAttendees: Math.max(1, Number(maxAttendees) || 1),
       notes,
     });
 

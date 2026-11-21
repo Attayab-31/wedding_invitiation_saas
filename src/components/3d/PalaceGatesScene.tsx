@@ -13,7 +13,7 @@ interface PalaceGatesSceneProps {
   isOpen: boolean;
   onEnter: () => void;
   events: InvitationEvent[];
-  isRsvpConfirmed: boolean;
+  isFinaleVisible: boolean;
   progressRef: React.RefObject<number>;
 }
 
@@ -382,7 +382,7 @@ export function PalaceGatesScene({
   isOpen,
   onEnter,
   events,
-  isRsvpConfirmed,
+  isFinaleVisible,
   progressRef,
 }: PalaceGatesSceneProps) {
   const { size, scene } = useThree();
@@ -592,7 +592,7 @@ export function PalaceGatesScene({
         </group>
 
         <PetalBurst isOpen={isOpen} />
-        <LanternFinale active={isRsvpConfirmed} events={events} />
+        <LanternFinale active={isFinaleVisible} events={events} />
       </group>
 
       <GoldDust count={72} />

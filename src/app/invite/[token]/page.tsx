@@ -72,5 +72,5 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  return <InvitationExperience experience={experience} token={token} />;
+  return <InvitationExperience experience={experience} />;
 }

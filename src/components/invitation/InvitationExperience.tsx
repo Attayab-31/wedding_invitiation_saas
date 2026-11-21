@@ -6,15 +6,12 @@ import { ResolvedGuestExperience } from '@/types/database';
 import { InvitationCanvas } from '@/components/3d/InvitationCanvas';
 import { SmoothScrollProvider, useSmoothScroll } from '@/components/animation/SmoothScrollProvider';
 import { AudioControl } from './AudioControl';
-import { ConfirmedVipPass } from './ConfirmedVipPass';
 import { EventStop } from './EventStop';
 import { ClosingBlessings } from './scenes/ClosingBlessings';
 import { IntroductionScene } from './scenes/IntroductionScene';
-import { RSVPConfirmation, RSVPForm } from './scenes/RSVPForm';
 
 interface InvitationExperienceProps {
   experience: ResolvedGuestExperience;
-  token: string;
 }
 
 function getMonogram(coupleNames: string) {
@@ -25,17 +22,15 @@ function getMonogram(coupleNames: string) {
     .join('&');
 }
 
-function InvitationJourney({ experience, token }: InvitationExperienceProps) {
+function InvitationJourney({ experience }: InvitationExperienceProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrollUnlocked, setIsScrollUnlocked] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [audioUnavailable, setAudioUnavailable] = useState(false);
-  const [showVipPass, setShowVipPass] = useState(false);
-  const [confirmations, setConfirmations] = useState<RSVPConfirmation[]>([]);
+  const [isFinaleVisible, setIsFinaleVisible] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const gateOpenTimerRef = useRef<number | null>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
-  const rsvpRef = useRef<HTMLElement>(null);
   const finaleRef = useRef<HTMLElement>(null);
   const sceneProgressRef = useRef(0);
   const { scrollTo, setLocked } = useSmoothScroll();
@@ -74,6 +69,18 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
     }
   }, []);
 
+  useEffect(() => {
+    const finale = finaleRef.current;
+    if (!finale) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsFinaleVisible(entry.isIntersecting),
+      { threshold: 0.35 }
+    );
+    observer.observe(finale);
+    return () => observer.disconnect();
+  }, []);
+
   const toggleAudio = useCallback(() => {
     const audio = audioRef.current;
     const nextMuted = !isAudioMuted;
@@ -90,21 +97,6 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
       });
     }
   }, [isAudioMuted]);
-
-  const handleRSVPConfirmation = useCallback((submitted: RSVPConfirmation[]) => {
-    setConfirmations((previous) => {
-      const byEvent = new Map(previous.map((confirmation) => [confirmation.eventId, confirmation]));
-      submitted.forEach((confirmation) => byEvent.set(confirmation.eventId, confirmation));
-      return Array.from(byEvent.values());
-    });
-    setShowVipPass(true);
-    if (finaleRef.current) scrollTo(finaleRef.current);
-  }, [scrollTo]);
-
-  const handleEditResponse = useCallback(() => {
-    setShowVipPass(false);
-    if (rsvpRef.current) scrollTo(rsvpRef.current);
-  }, [scrollTo]);
 
   return (
     <main className="relative min-h-screen w-full bg-[#100D10] text-[#F8F1E5]">
@@ -133,7 +125,7 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
             onGateOpenComplete={unlockScroll}
             events={events}
             isScrollUnlocked={isScrollUnlocked}
-            isRsvpConfirmed={confirmations.length > 0}
+            isFinaleVisible={isFinaleVisible}
             scrollTargetRef={journeyRef}
             progressRef={sceneProgressRef}
           />
@@ -217,52 +209,22 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
           ))}
 
           <section
-            id="rsvp"
-            ref={rsvpRef}
+            id="celebration"
             data-scroll-stage
-            aria-labelledby="rsvp-stage-heading"
+            aria-labelledby="celebration-heading"
             className="relative flex min-h-dvh items-center justify-center px-3 py-12 sm:px-5 sm:py-14"
           >
             <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0B0D16]/55 via-[#151521]/55 to-[#0B0D16]/75" />
-            <div className="relative w-full max-w-7xl pointer-events-auto">
+            <div className="relative w-full max-w-4xl pointer-events-auto">
               <div className="mb-3 text-center sm:mb-5">
                 <p className="font-royal text-[9px] font-semibold uppercase tracking-[0.3em] text-[#E4C77D]">
-                  The final details
+                  Until We Celebrate
                 </p>
-                <h2 id="rsvp-stage-heading" className="mt-1 font-royal text-xl font-bold text-[#F7EAD1] sm:text-2xl">
+                <h2 id="celebration-heading" className="mt-1 font-royal text-xl font-bold text-[#F7EAD1] sm:text-2xl">
                   The Celebration Awaits
                 </h2>
               </div>
-              <div
-                data-scroll-content
-                className="mx-auto grid max-h-[86dvh] max-w-6xl gap-3 overflow-y-auto md:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)] md:items-center md:gap-5"
-              >
-                <ClosingBlessings wedding={wedding} compact />
-                <div className={showVipPass ? 'hidden' : 'block'}>
-                  <RSVPForm
-                    compact
-                    token={token}
-                    guestName={guest.display_name}
-                    events={events}
-                    onConfirmation={handleRSVPConfirmation}
-                  />
-                </div>
-                {showVipPass && (
-                  <div className="stationery-card gold-corners rounded-2xl p-5 text-center md:col-span-1">
-                    <Heart aria-hidden="true" className="mx-auto h-6 w-6 fill-[#B88E3E] text-[#B88E3E]" />
-                    <p className="mt-2 font-serif text-sm text-[#3A0715]">
-                      Your response has been lovingly received.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleEditResponse}
-                      className="mt-3 rounded-full border border-[#B88E3E]/45 bg-[#FAF7F2] px-4 py-2 font-royal text-[10px] font-bold uppercase tracking-wider text-[#580F25] transition hover:bg-[#F3ECE0]"
-                    >
-                      Review or update RSVP
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ClosingBlessings wedding={wedding} />
             </div>
           </section>
 
@@ -279,38 +241,11 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
                 A wish carried to the night sky
               </p>
               <h2 id="finale-heading" className="mt-2 font-script-luxury text-4xl text-[#F7E4B7] sm:text-5xl">
-                {confirmations.length ? 'A celebration to remember' : 'Your lantern awaits'}
+                Your lantern awaits
               </h2>
               <p className="mx-auto mt-2 max-w-xl font-serif text-sm italic text-[#EEE6D7]/80">
-                {confirmations.length
-                  ? 'Thank you for sharing in our joy. We look forward to welcoming you beneath the courtyard lights.'
-                  : 'Share your response and we will send a little light into the Lahore night for you.'}
+                May its warm light carry our gratitude into the Lahore night.
               </p>
-
-              {showVipPass && confirmations.length > 0 ? (
-                <div className="mt-6">
-                  <ConfirmedVipPass
-                    guestName={guest.display_name}
-                    coupleNames={wedding.couple_names}
-                    confirmations={confirmations}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleEditResponse}
-                    className="mt-4 rounded-full border border-[#D8B66D]/55 bg-[#15131B]/75 px-4 py-2 font-royal text-[9px] font-bold uppercase tracking-[0.16em] text-[#F3E4C5] transition hover:bg-[#302439]"
-                  >
-                    Review or update RSVP
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => rsvpRef.current && scrollTo(rsvpRef.current)}
-                  className="mt-6 rounded-full border border-[#E1C47E]/75 bg-[#D4AD61] px-6 py-3 font-royal text-[10px] font-bold uppercase tracking-[0.2em] text-[#28180F] shadow-lg transition hover:bg-[#F0D28B]"
-                >
-                  Continue to RSVP
-                </button>
-              )}
 
               <button
                 type="button"
@@ -333,10 +268,10 @@ function InvitationJourney({ experience, token }: InvitationExperienceProps) {
   );
 }
 
-export function InvitationExperience({ experience, token }: InvitationExperienceProps) {
+export function InvitationExperience({ experience }: InvitationExperienceProps) {
   return (
     <SmoothScrollProvider>
-      <InvitationJourney experience={experience} token={token} />
+      <InvitationJourney experience={experience} />
     </SmoothScrollProvider>
   );
 }

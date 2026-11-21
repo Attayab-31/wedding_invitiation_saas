@@ -134,9 +134,6 @@ export function EventStop({
           </p>
         </div>
 
-        <p className="mt-4 font-serif text-xs italic text-[#E4D9C6]/75">
-          {event.guest_max_attendees} {event.guest_max_attendees === 1 ? 'place is' : 'places are'} reserved for you
-        </p>
         <button
           type="button"
           onClick={() => setIsDialogOpen(true)}

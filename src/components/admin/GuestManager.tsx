@@ -12,8 +12,6 @@ import {
   Ban,
   Check,
   Send,
-  Users,
-  CheckCircle2,
   AlertCircle,
   X,
   MessageCircle,
@@ -35,7 +33,6 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newPhone, setNewPhone] = useState('');
-  const [newMaxAttendees, setNewMaxAttendees] = useState(2);
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>(events.map((e) => e.id));
   const [newNotes, setNewNotes] = useState('');
   const [addError, setAddError] = useState('');
@@ -47,7 +44,8 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
       g.display_name.toLowerCase().includes(search.toLowerCase()) ||
       g.phone.includes(search);
 
-    const matchesStatus = statusFilter === 'all' || g.invitation_status === statusFilter;
+    const status = g.invitation_status === 'responded' ? 'opened' : g.invitation_status;
+    const matchesStatus = statusFilter === 'all' || status === statusFilter;
 
     const matchesEvent =
       eventFilter === 'all' ||
@@ -85,7 +83,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
   };
 
   const handleRevoke = async (guestId: string) => {
-    if (!confirm('Revoke this invitation? The guest will no longer be able to open the page or RSVP.')) return;
+    if (!confirm('Revoke this invitation? The guest will no longer be able to open the page.')) return;
     try {
       const res = await fetch(`/api/admin/guests/${guestId}`, {
         method: 'PATCH',
@@ -134,7 +132,6 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
           displayName: newDisplayName,
           phone: newPhone,
           allowedEventIds: selectedEventIds,
-          maxAttendees: newMaxAttendees,
           notes: newNotes,
         }),
       });
@@ -150,8 +147,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
       const createdGuest = {
         ...data.guest,
         token: data.token,
-        event_access: selectedEventIds.map((id) => ({ event_id: id, max_attendees: newMaxAttendees })),
-        rsvps: [],
+        event_access: selectedEventIds.map((id) => ({ event_id: id })),
       };
 
       setGuests([createdGuest, ...guests]);
@@ -175,7 +171,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
             Guest Invitation Registry
           </h1>
           <p className="text-xs text-[#E6D2A0]/80 font-serif italic mt-0.5">
-            Manage invitations, permissions, RSVP statuses, and secure cryptographic tokens
+            Manage invitations, function permissions, and secure invitation tokens
           </p>
         </div>
 
@@ -211,7 +207,6 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
             <option value="created">Created (Unsent)</option>
             <option value="sent">Sent via WhatsApp</option>
             <option value="opened">Opened 3D Experience</option>
-            <option value="responded">Responded RSVP</option>
             <option value="revoked">Revoked</option>
           </select>
         </div>
@@ -240,7 +235,6 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
               <th className="py-3.5 px-4">Guest Name</th>
               <th className="py-3.5 px-4">Phone</th>
               <th className="py-3.5 px-4">Permitted Events</th>
-              <th className="py-3.5 px-4 text-center">Max Headcount</th>
               <th className="py-3.5 px-4">Status</th>
               <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
@@ -248,7 +242,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
           <tbody className="divide-y divide-[#C5A15A]/10 font-sans">
             {filteredGuests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-[#E6D2A0]/60 font-serif italic">
+                <td colSpan={5} className="py-8 text-center text-[#E6D2A0]/60 font-serif italic">
                   No matching guests found.
                 </td>
               </tr>
@@ -258,14 +252,14 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                   guest.event_access?.some((a: any) => a.event_id === e.id)
                 );
 
+                const status =
+                  guest.invitation_status === 'responded' ? 'opened' : guest.invitation_status;
                 const statusColor =
-                  guest.invitation_status === 'responded'
-                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                    : guest.invitation_status === 'opened'
+                  status === 'opened'
                     ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
-                    : guest.invitation_status === 'sent'
+                    : status === 'sent'
                     ? 'bg-blue-950/80 text-blue-300 border-blue-500/40'
-                    : guest.invitation_status === 'revoked'
+                    : status === 'revoked'
                     ? 'bg-red-950/80 text-red-300 border-red-500/40'
                     : 'bg-[#3A0715] text-[#E6D2A0] border-[#C5A15A]/30';
 
@@ -299,15 +293,11 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-center font-royal font-bold text-sm text-[#F8F1E5]">
-                      {guest.max_attendees}
-                    </td>
-
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-royal font-semibold border ${statusColor}`}
                       >
-                        {guest.invitation_status}
+                        {status}
                       </span>
                     </td>
 
@@ -427,21 +417,6 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                   placeholder="e.g. 03001234567 or +923001234567"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-lg bg-[#191516] border border-[#C5A15A]/30 text-xs text-[#F8F1E5] focus:outline-none focus:border-[#C5A15A]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-[#C5A15A] font-royal mb-1">
-                  Maximum Permitted Attendees *
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  required
-                  value={newMaxAttendees}
-                  onChange={(e) => setNewMaxAttendees(Number(e.target.value))}
                   className="w-full px-3.5 py-2 rounded-lg bg-[#191516] border border-[#C5A15A]/30 text-xs text-[#F8F1E5] focus:outline-none focus:border-[#C5A15A]"
                 />
               </div>

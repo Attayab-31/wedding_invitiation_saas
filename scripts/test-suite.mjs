@@ -84,6 +84,8 @@ async function runTests() {
     assert.ok(eventTypes.includes('mehndi'), 'Must include Mehndi');
     assert.ok(eventTypes.includes('barat'), 'Must include Barat');
     assert.ok(!eventTypes.includes('walima'), 'Must NOT include Walima (unauthorized)');
+    assert.ok(!('max_attendees' in exp.guest), 'Invitation payload should not expose attendee limits');
+    assert.ok(exp.events.every((event) => !('guest_max_attendees' in event) && !('existing_rsvp' in event)));
   });
 
   await asyncTest('Guest Resolution: Guest 2 (Muhammad Ali) receives Barat only', async () => {
@@ -105,45 +107,7 @@ async function runTests() {
     assert.strictEqual(invalid, null);
   });
 
-  // 4. RSVP Validation & Boundary Enforcement Tests
-  await asyncTest('RSVP Enforcement: Guest 1 joyfully confirms Barat attendance within limit', async () => {
-    const baratId = '22222222-2222-2222-2222-222222222202';
-    const res = await DatabaseService.submitRSVP({
-      token: 'vip-bilal-ahmed-family',
-      eventId: baratId,
-      attending: true,
-      headcount: 4,
-      dietaryNotes: 'No nuts',
-      message: 'Mubarak! Looking forward to celebrating.',
-    });
-    assert.strictEqual(res.success, true);
-  });
-
-  await asyncTest('RSVP Security: Guest 1 rejected when attempting unauthorized event (Walima)', async () => {
-    const walimaId = '22222222-2222-2222-2222-222222222203';
-    const res = await DatabaseService.submitRSVP({
-      token: 'vip-bilal-ahmed-family',
-      eventId: walimaId,
-      attending: true,
-      headcount: 2,
-    });
-    assert.strictEqual(res.success, false);
-    assert.ok(res.error?.includes('not invited'), `Error message should explain unauthorized event, got: ${res.error}`);
-  });
-
-  await asyncTest('RSVP Security: Rejects headcount exceeding maximum assigned limit', async () => {
-    const baratId = '22222222-2222-2222-2222-222222222202';
-    const res = await DatabaseService.submitRSVP({
-      token: 'vip-bilal-ahmed-family',
-      eventId: baratId,
-      attending: true,
-      headcount: 99, // Max is 5!
-    });
-    assert.strictEqual(res.success, false);
-    assert.ok(res.error?.includes('Maximum permitted attendees'), 'Must enforce headcount limit');
-  });
-
-  // 5. GLB Asset Verification
+  // 4. GLB Asset Verification
   test('Asset Verification: GLB model exists and is non-empty', () => {
     const glbPath = path.resolve('public/models/luxury_envelope.glb');
     assert.ok(fs.existsSync(glbPath), 'luxury_envelope.glb must exist in public/models');

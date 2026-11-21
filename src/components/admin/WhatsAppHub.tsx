@@ -338,9 +338,6 @@ ${wedding.host_names}`;
                       <span className="font-serif font-bold text-sm text-[#F8F1E5] block">
                         {guest.display_name}
                       </span>
-                      <span className="text-[10px] text-[#E6D2A0]/60">
-                        Max: {guest.max_attendees} {guest.max_attendees === 1 ? 'Person' : 'People'}
-                      </span>
                     </td>
 
                     <td className="py-3 px-4 font-mono text-xs text-[#E6D2A0]">

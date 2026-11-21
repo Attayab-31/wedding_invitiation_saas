@@ -142,7 +142,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const virtualScroll = ({ event, deltaY }: VirtualScrollData) => {
       if (event.type === 'wheel') {
         const wheelEvent = event as WheelEvent;
-        if (wheelEvent.ctrlKey || isLockedRef.current || deltaY === 0) return true;
+        if (wheelEvent.ctrlKey || deltaY === 0) return true;
         if (canScrollWithinContent(wheelEvent.target, deltaY)) {
           wheelDistanceRef.current = 0;
           if (wheelResetTimerRef.current !== null) {
@@ -153,7 +153,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
         }
 
         if (wheelEvent.cancelable) wheelEvent.preventDefault();
-        if (isNavigatingRef.current) {
+        if (isLockedRef.current || isNavigatingRef.current) {
           wheelDistanceRef.current = 0;
           if (wheelResetTimerRef.current !== null) {
             window.clearTimeout(wheelResetTimerRef.current);
@@ -185,7 +185,6 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       if (event.type === 'touchmove') {
         const touchEvent = event as TouchEvent;
         if (
-          isLockedRef.current ||
           touchEvent.touches.length > 1 ||
           deltaY === 0 ||
           canScrollWithinContent(touchEvent.target, deltaY)
@@ -194,6 +193,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
         }
 
         if (touchEvent.cancelable) touchEvent.preventDefault();
+        if (isLockedRef.current || isNavigatingRef.current) return false;
         touchNavigationRef.current = true;
         touchDistanceRef.current += deltaY;
         touchDirectionRef.current = Math.sign(touchDistanceRef.current);

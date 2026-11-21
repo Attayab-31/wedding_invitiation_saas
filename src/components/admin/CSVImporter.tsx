@@ -25,11 +25,9 @@ interface ParsedPreviewRow {
   rawName: string;
   rawPhone: string;
   rawEvents: string;
-  rawAttendees: string;
   normalizedPhone: string;
   isPhoneValid: boolean;
   parsedEvents: string[];
-  maxAttendees: number;
   hasError: boolean;
   errorMessage?: string;
 }
@@ -45,11 +43,11 @@ export function CSVImporter({ events }: CSVImporterProps) {
     results: any[];
   } | null>(null);
 
-  const sampleCSV = `name,phone,allowed_events,max_attendees
-Bilal Ahmed & Family,03001234567,"mehndi,barat",5
-Mr. Muhammad Ali,+923121234567,"barat",2
-Usman Khan & Family,0333-1234567,"mehndi,barat,walima",6
-Sarah Jenkins & Guest,923219876543,"walima",2`;
+  const sampleCSV = `name,phone,allowed_events
+Bilal Ahmed & Family,03001234567,"mehndi,barat"
+Mr. Muhammad Ali,+923121234567,"barat"
+Usman Khan & Family,0333-1234567,"mehndi,barat,walima"
+Sarah Jenkins & Guest,923219876543,"walima"`;
 
   const parseContent = (content: string) => {
     Papa.parse(content, {
@@ -64,10 +62,8 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
           const name = row.name || row.Name || row['Guest Name'] || '';
           const phone = row.phone || row.Phone || row['Mobile'] || '';
           const eventsStr = row.allowed_events || row.events || row.Events || 'mehndi,barat,walima';
-          const maxAttendeesStr = row.max_attendees || row.attendees || row['Max Attendees'] || '2';
 
           const phoneCheck = normalizePakistaniPhone(phone);
-          const maxAttendees = Math.max(1, parseInt(maxAttendeesStr, 10) || 1);
 
           // Parse event strings
           const parsedEvents = eventsStr
@@ -98,11 +94,9 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
             rawName: name,
             rawPhone: phone,
             rawEvents: eventsStr,
-            rawAttendees: maxAttendeesStr,
             normalizedPhone: phoneCheck.normalized,
             isPhoneValid: phoneCheck.isValid,
             parsedEvents,
-            maxAttendees,
             hasError,
             errorMessage,
           });
@@ -145,7 +139,6 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
             name: r.rawName,
             phone: r.normalizedPhone,
             allowedEvents: r.parsedEvents,
-            maxAttendees: r.maxAttendees,
           })),
         }),
       });
@@ -183,13 +176,13 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
     if (!importSummary?.results) return;
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const headers = ['name', 'phone', 'max_attendees', 'invitation_url'];
+    const headers = ['name', 'phone', 'invitation_url'];
     const lines = [headers.join(',')];
 
     importSummary.results.forEach((item) => {
       const inviteUrl = `${origin}/invite/${item.token}`;
       lines.push(
-        `"${item.name}","${item.phone}",${item.maxAttendees},"${inviteUrl}"`
+        `"${item.name}","${item.phone}","${inviteUrl}"`
       );
     });
 
@@ -235,7 +228,7 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
             Upload CSV File
           </h3>
           <p className="text-xs text-[#E6D2A0]/60 mt-1 mb-4">
-            Supports standard CSV files with name, phone, allowed_events, and max_attendees columns
+            Supports CSV files with guest names, phone numbers, and permitted events
           </p>
           <label className="cursor-pointer px-4 py-2 rounded-lg bg-gradient-to-r from-[#580F25] to-[#3A0715] border border-[#C5A15A] text-xs font-royal text-[#E6D2A0] hover:shadow-[0_0_15px_rgba(197,161,90,0.3)] transition-all">
             <span>Browse CSV File</span>
@@ -272,7 +265,7 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
                 setPasteText(e.target.value);
                 parseContent(e.target.value);
               }}
-              placeholder={`name,phone,allowed_events,max_attendees\nBilal Ahmed & Family,03001234567,"mehndi,barat",5`}
+              placeholder={`name,phone,allowed_events\nBilal Ahmed & Family,03001234567,"mehndi,barat"`}
               className="w-full p-2.5 rounded-lg bg-[#191516] border border-[#C5A15A]/30 text-xs font-mono text-[#F8F1E5] placeholder-[#F8F1E5]/30 focus:outline-none focus:border-[#C5A15A] resize-none"
             />
           </div>
@@ -323,7 +316,6 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
                   <th className="py-3 px-4">Raw Phone</th>
                   <th className="py-3 px-4">Normalized Pakistani Phone</th>
                   <th className="py-3 px-4">Permitted Functions</th>
-                  <th className="py-3 px-3 text-center">Max Headcount</th>
                   <th className="py-3 px-4">Validation Status</th>
                 </tr>
               </thead>
@@ -360,9 +352,6 @@ Sarah Jenkins & Guest,923219876543,"walima",2`;
                           </span>
                         ))}
                       </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-royal font-bold text-[#F8F1E5]">
-                      {row.maxAttendees}
                     </td>
                     <td className="py-2.5 px-4">
                       {row.hasError ? (

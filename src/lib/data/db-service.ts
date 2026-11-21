@@ -1,4 +1,4 @@
-import { Wedding, WeddingEvent, Guest, GuestEventAccess, RSVP, InvitationLog, ResolvedGuestExperience } from '@/types/database';
+import { Wedding, WeddingEvent, Guest, GuestEventAccess, InvitationLog, ResolvedGuestExperience } from '@/types/database';
 import { hashGuestToken } from '@/lib/security/token';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase/admin';
 
@@ -148,7 +148,6 @@ const memoryStore = {
   events: [...INITIAL_EVENTS],
   guests: [...INITIAL_GUESTS],
   guest_event_access: [...INITIAL_ACCESS],
-  rsvps: [] as RSVP[],
   logs: [] as InvitationLog[],
   guestTokens: new Map<string, string>([
     ['33333333-3333-3333-3333-333333333301', 'vip-bilal-ahmed-family'],
@@ -203,12 +202,6 @@ export class DatabaseService {
         .in('id', eventIds)
         .order('event_date', { ascending: true });
 
-      // 5. Fetch existing RSVPs
-      const { data: rsvps } = await supabaseAdmin
-        .from('rsvps')
-        .select('*')
-        .eq('guest_id', guest.id);
-
       // Log opened action asynchronously
       await supabaseAdmin.from('invitation_logs').insert({
         guest_id: guest.id,
@@ -217,29 +210,13 @@ export class DatabaseService {
       });
 
       // Construct safe payload
-      const resolvedEvents = (events || []).map((evt: WeddingEvent) => {
-        const access = accessList.find((a: GuestEventAccess) => a.event_id === evt.id);
-        const existingRsvp = (rsvps || []).find((r: RSVP) => r.event_id === evt.id);
-        return {
-          ...evt,
-          guest_max_attendees: access ? access.max_attendees : guest.max_attendees,
-          existing_rsvp: existingRsvp
-            ? {
-                attending: existingRsvp.attending,
-                headcount: existingRsvp.headcount,
-                dietary_notes: existingRsvp.dietary_notes,
-                message: existingRsvp.message,
-              }
-            : null,
-        };
-      });
+      const resolvedEvents = events || [];
 
       return {
         guest: {
           id: guest.id,
           display_name: guest.display_name,
           phone: guest.phone,
-          max_attendees: guest.max_attendees,
           invitation_status: guest.invitation_status,
         },
         wedding,
@@ -274,217 +251,34 @@ export class DatabaseService {
       created_at: new Date().toISOString(),
     });
 
-    const resolvedEvents = permittedEvents.map((evt) => {
-      const access = accessList.find((a) => a.event_id === evt.id);
-      const existingRsvp = memoryStore.rsvps.find((r) => r.guest_id === guest.id && r.event_id === evt.id);
-      return {
-        ...evt,
-        guest_max_attendees: access ? access.max_attendees : guest.max_attendees,
-        existing_rsvp: existingRsvp
-          ? {
-              attending: existingRsvp.attending,
-              headcount: existingRsvp.headcount,
-              dietary_notes: existingRsvp.dietary_notes,
-              message: existingRsvp.message,
-            }
-          : null,
-      };
-    });
-
     return {
       guest: {
         id: guest.id,
         display_name: guest.display_name,
         phone: guest.phone,
-        max_attendees: guest.max_attendees,
         invitation_status: guest.invitation_status,
       },
       wedding,
-      events: resolvedEvents,
+      events: permittedEvents,
     };
   }
 
   /**
-   * Submits an RSVP for a specific event with server-side validation of authorization & max attendees.
-   */
-  static async submitRSVP(params: {
-    token: string;
-    eventId: string;
-    attending: boolean;
-    headcount: number;
-    dietaryNotes?: string;
-    message?: string;
-  }): Promise<{ success: boolean; error?: string }> {
-    const { token, eventId, attending, headcount, dietaryNotes, message } = params;
-    const tokenHash = hashGuestToken(token);
-
-    if (isSupabaseAdminConfigured && supabaseAdmin) {
-      // 1. Verify guest
-      const { data: guest } = await supabaseAdmin
-        .from('guests')
-        .select('*')
-        .eq('token_hash', tokenHash)
-        .single();
-
-      if (!guest || guest.invitation_status === 'revoked') {
-        return { success: false, error: 'Unauthorized or expired invitation token.' };
-      }
-
-      // 2. Verify event permission & max attendees
-      const { data: access } = await supabaseAdmin
-        .from('guest_event_access')
-        .select('*')
-        .eq('guest_id', guest.id)
-        .eq('event_id', eventId)
-        .single();
-
-      if (!access) {
-        return { success: false, error: 'You are not invited to this event.' };
-      }
-
-      if (attending) {
-        if (headcount <= 0) {
-          return { success: false, error: 'Headcount must be at least 1 person.' };
-        }
-        if (headcount > access.max_attendees) {
-          return {
-            success: false,
-            error: `Maximum permitted attendees for this event is ${access.max_attendees}.`,
-          };
-        }
-      }
-
-      const finalHeadcount = attending ? headcount : 0;
-
-      // 3. Upsert RSVP
-      const { error: rsvpErr } = await supabaseAdmin.from('rsvps').upsert(
-        {
-          guest_id: guest.id,
-          event_id: eventId,
-          attending,
-          headcount: finalHeadcount,
-          dietary_notes: dietaryNotes?.trim() || null,
-          message: message?.trim() || null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'guest_id,event_id' }
-      );
-
-      if (rsvpErr) {
-        return { success: false, error: 'Failed to record RSVP. Please try again.' };
-      }
-
-      // Update guest status to responded
-      await supabaseAdmin
-        .from('guests')
-        .update({ invitation_status: 'responded', updated_at: new Date().toISOString() })
-        .eq('id', guest.id);
-
-      // Log action
-      await supabaseAdmin.from('invitation_logs').insert({
-        guest_id: guest.id,
-        action: 'rsvp_submitted',
-        metadata: { eventId, attending, headcount: finalHeadcount },
-      });
-
-      return { success: true };
-    }
-
-    // In-memory implementation
-    const guest = memoryStore.guests.find((g) => g.token_hash === tokenHash);
-    if (!guest || guest.invitation_status === 'revoked') {
-      return { success: false, error: 'Unauthorized or expired invitation token.' };
-    }
-
-    const access = memoryStore.guest_event_access.find(
-      (a) => a.guest_id === guest.id && a.event_id === eventId
-    );
-    if (!access) {
-      return { success: false, error: 'You are not invited to this event.' };
-    }
-
-    if (attending) {
-      if (headcount <= 0) {
-        return { success: false, error: 'Headcount must be at least 1 person.' };
-      }
-      if (headcount > access.max_attendees) {
-        return {
-          success: false,
-          error: `Maximum permitted attendees for this event is ${access.max_attendees}.`,
-        };
-      }
-    }
-
-    const finalHeadcount = attending ? headcount : 0;
-
-    const existingIndex = memoryStore.rsvps.findIndex(
-      (r) => r.guest_id === guest.id && r.event_id === eventId
-    );
-
-    const rsvpRecord: RSVP = {
-      id: existingIndex >= 0 ? memoryStore.rsvps[existingIndex].id : Math.random().toString(),
-      guest_id: guest.id,
-      event_id: eventId,
-      attending,
-      headcount: finalHeadcount,
-      dietary_notes: dietaryNotes?.trim() || null,
-      message: message?.trim() || null,
-      submitted_at: existingIndex >= 0 ? memoryStore.rsvps[existingIndex].submitted_at : new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    if (existingIndex >= 0) {
-      memoryStore.rsvps[existingIndex] = rsvpRecord;
-    } else {
-      memoryStore.rsvps.push(rsvpRecord);
-    }
-
-    guest.invitation_status = 'responded';
-    memoryStore.logs.push({
-      id: Math.random().toString(),
-      guest_id: guest.id,
-      action: 'rsvp_submitted',
-      metadata: { eventId, attending, headcount: finalHeadcount },
-      created_at: new Date().toISOString(),
-    });
-
-    return { success: true };
-  }
-
-  /**
-   * Admin: Get all dashboard metrics & statistics
+   * Admin: Get invitation and event permission statistics
    */
   static async getDashboardMetrics() {
     const guests = memoryStore.guests;
     const events = memoryStore.events;
-    const rsvps = memoryStore.rsvps;
-
     const totalGuests = guests.length;
     const sentInvitations = guests.filter((g) => g.invitation_status === 'sent' || g.invitation_status === 'opened' || g.invitation_status === 'responded').length;
     const openedInvitations = guests.filter((g) => g.invitation_status === 'opened' || g.invitation_status === 'responded').length;
-    const respondedGuests = guests.filter((g) => g.invitation_status === 'responded').length;
-
-    const confirmedRSVPs = rsvps.filter((r) => r.attending);
-    const declinedRSVPs = rsvps.filter((r) => !r.attending);
-    const totalConfirmedAttendees = confirmedRSVPs.reduce((sum, r) => sum + r.headcount, 0);
 
     const eventBreakdown = events.map((event) => {
       const eventAccess = memoryStore.guest_event_access.filter((a) => a.event_id === event.id);
-      const invitedGuestCount = eventAccess.length;
-      const totalCapacity = eventAccess.reduce((sum, a) => sum + a.max_attendees, 0);
-
-      const eventRSVPs = rsvps.filter((r) => r.event_id === event.id);
-      const confirmed = eventRSVPs.filter((r) => r.attending);
-      const declined = eventRSVPs.filter((r) => !r.attending);
-      const confirmedAttendees = confirmed.reduce((sum, r) => sum + r.headcount, 0);
 
       return {
         event,
-        invitedGuestCount,
-        totalCapacity,
-        confirmedCount: confirmed.length,
-        declinedCount: declined.length,
-        confirmedAttendees,
+        invitedGuestCount: eventAccess.length,
       };
     });
 
@@ -492,11 +286,6 @@ export class DatabaseService {
       totalGuests,
       sentInvitations,
       openedInvitations,
-      respondedGuests,
-      totalRSVPResponses: rsvps.length,
-      confirmedRSVPs: confirmedRSVPs.length,
-      declinedRSVPs: declinedRSVPs.length,
-      totalConfirmedAttendees,
       eventBreakdown,
     };
   }
@@ -507,13 +296,11 @@ export class DatabaseService {
   static async getAllGuests() {
     return memoryStore.guests.map((g) => {
       const access = memoryStore.guest_event_access.filter((a) => a.guest_id === g.id);
-      const rsvps = memoryStore.rsvps.filter((r) => r.guest_id === g.id);
       const token = memoryStore.guestTokens.get(g.id) || 'demo-token';
       return {
         ...g,
         token,
         event_access: access,
-        rsvps,
       };
     });
   }
@@ -525,13 +312,14 @@ export class DatabaseService {
     displayName: string;
     phone: string;
     allowedEventIds: string[];
-    maxAttendees: number;
+    maxAttendees?: number;
     notes?: string;
   }): Promise<{ guest: Guest; token: string }> {
     const { generateGuestToken } = await import('@/lib/security/token');
     const token = generateGuestToken();
     const tokenHash = hashGuestToken(token);
     const guestId = 'guest_' + Math.random().toString(36).substring(2, 10);
+    const maxAttendees = Math.max(1, params.maxAttendees ?? 1);
 
     const newGuest: Guest = {
       id: guestId,
@@ -539,7 +327,7 @@ export class DatabaseService {
       display_name: params.displayName.trim(),
       phone: params.phone.trim(),
       token_hash: tokenHash,
-      max_attendees: params.maxAttendees,
+      max_attendees: maxAttendees,
       invitation_status: 'created',
       expires_at: null,
       notes: params.notes || null,
@@ -555,7 +343,7 @@ export class DatabaseService {
         id: Math.random().toString(),
         guest_id: guestId,
         event_id: eventId,
-        max_attendees: params.maxAttendees,
+        max_attendees: maxAttendees,
         created_at: new Date().toISOString(),
       });
     }

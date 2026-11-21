@@ -1,5 +1,5 @@
 import { DatabaseService } from '@/lib/data/db-service';
-import { Calendar, Clock, MapPin, Navigation, Sparkles, Users } from 'lucide-react';
+import { Clock, MapPin, Navigation, Sparkles } from 'lucide-react';
 
 export default async function AdminEventsPage() {
   const events = await DatabaseService.getAllEvents();
@@ -13,7 +13,7 @@ export default async function AdminEventsPage() {
           Wedding Functions &amp; Venue Management
         </h1>
         <p className="text-xs text-[#E6D2A0]/80 font-serif italic mt-0.5">
-          Configure ceremony dates, venues, dress codes, Google Maps links, and view attendance capacities
+          Configure ceremony dates, venues, dress codes, Google Maps links, and guest permissions
         </p>
       </div>
 
@@ -79,12 +79,12 @@ export default async function AdminEventsPage() {
                 </div>
               </div>
 
-              {/* Attendance metrics */}
+              {/* Invitation access */}
               <div className="pt-4 border-t border-[#C5A15A]/20">
                 <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-[#E6D2A0]/80">Confirmed Attendees:</span>
+                  <span className="text-[#E6D2A0]/80">Guests invited:</span>
                   <span className="text-[#C5A15A] font-bold">
-                    {breakdown?.confirmedAttendees || 0} / {breakdown?.totalCapacity || 0}
+                    {breakdown?.invitedGuestCount || 0}
                   </span>
                 </div>
 

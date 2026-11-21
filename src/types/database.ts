@@ -97,19 +97,8 @@ export interface ResolvedGuestExperience {
     id: string;
     display_name: string;
     phone: string;
-    max_attendees: number;
     invitation_status: InvitationStatus;
   };
   wedding: Wedding;
-  events: Array<
-    WeddingEvent & {
-      guest_max_attendees: number;
-      existing_rsvp?: {
-        attending: boolean;
-        headcount: number;
-        dietary_notes: string | null;
-        message: string | null;
-      } | null;
-    }
-  >;
+  events: WeddingEvent[];
 }

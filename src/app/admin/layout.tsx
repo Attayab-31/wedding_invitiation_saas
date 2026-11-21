@@ -5,8 +5,6 @@ import {
   FileSpreadsheet,
   MessageCircle,
   CalendarDays,
-  CheckSquare,
-  Sparkles,
   ExternalLink,
 } from 'lucide-react';
 
@@ -91,13 +89,6 @@ export default function AdminLayout({
             <span>Events &amp; Venues</span>
           </Link>
 
-          <Link
-            href="/admin/rsvps"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-royal font-bold tracking-wider uppercase bg-[#3A0715] border border-[#B88E3E]/40 text-[#DFCA94] hover:bg-[#580F25] hover:text-[#FAF7F2] transition-all"
-          >
-            <CheckSquare className="w-4 h-4 text-[#B88E3E]" />
-            <span>RSVP Reports</span>
-          </Link>
         </div>
 
         {children}

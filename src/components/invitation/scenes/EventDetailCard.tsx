@@ -5,7 +5,7 @@ import { WeddingEvent } from '@/types/database';
 import { Calendar, CalendarPlus, Clock, MapPin, Navigation } from 'lucide-react';
 
 interface EventDetailCardProps {
-  event: WeddingEvent & { guest_max_attendees?: number };
+  event: WeddingEvent;
 }
 
 function parseLahoreTime(date: string, time: string) {
@@ -90,12 +90,6 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         <span className="text-[10px] sm:text-[11px] tracking-[0.25em] uppercase text-[#8C6D3B] font-royal font-bold">
           {headerTitle}
         </span>
-
-        {event.guest_max_attendees && (
-          <span className="text-xs text-[#580F25] font-serif italic bg-[#FAF7F2] px-2.5 py-0.5 rounded-full border border-[#B88E3E]/25">
-            Invited for up to {event.guest_max_attendees} {event.guest_max_attendees === 1 ? 'Guest' : 'Guests'}
-          </span>
-        )}
       </div>
 
       {/* Title & Description */}
