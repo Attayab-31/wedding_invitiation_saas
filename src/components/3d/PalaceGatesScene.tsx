@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -156,6 +156,95 @@ function createMonogramTexture(monogram: string) {
   }, 'couple monogram');
 }
 
+function CourtyardColonnade({ pathLength }: { pathLength: number }) {
+  const columnRef = useRef<THREE.InstancedMesh>(null);
+  const capitalRef = useRef<THREE.InstancedMesh>(null);
+  const baseRef = useRef<THREE.InstancedMesh>(null);
+  const lanternBodyRef = useRef<THREE.InstancedMesh>(null);
+  const lanternBulbRef = useRef<THREE.InstancedMesh>(null);
+  const lanternStemRef = useRef<THREE.InstancedMesh>(null);
+  const lanternRingRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const columns = useMemo(
+    () => courtyardColumns.filter(({ z }) => z > -pathLength),
+    [pathLength]
+  );
+  const lanterns = useMemo(
+    () => columns.map(({ x, z, side }) => ({ x: x - side * 0.42, z: z + 0.2 })),
+    [columns]
+  );
+
+  useLayoutEffect(() => {
+    const setInstances = (
+      mesh: THREE.InstancedMesh | null,
+      instances: Array<{ x: number; y: number; z: number; scale: number }>
+    ) => {
+      if (!mesh) return;
+      instances.forEach(({ x, y, z, scale }, index) => {
+        dummy.position.set(x, y, z);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(index, dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    };
+
+    setInstances(columnRef.current, columns.map(({ x, z }) => ({ x, y: 1, z, scale: 1 })));
+    setInstances(capitalRef.current, columns.map(({ x, z }) => ({ x, y: 2.08, z, scale: 1 })));
+    setInstances(baseRef.current, columns.map(({ x, z }) => ({ x, y: -0.08, z, scale: 1 })));
+    setInstances(
+      lanternBodyRef.current,
+      lanterns.map(({ x, z }) => ({ x, y: 0.18 * 0.48, z, scale: 0.48 }))
+    );
+    setInstances(
+      lanternBulbRef.current,
+      lanterns.map(({ x, z }) => ({ x, y: 0.18 * 0.48, z, scale: 0.48 }))
+    );
+    setInstances(
+      lanternStemRef.current,
+      lanterns.map(({ x, z }) => ({ x, y: 0.48 * 0.48, z, scale: 0.48 }))
+    );
+    setInstances(
+      lanternRingRef.current,
+      lanterns.map(({ x, z }) => ({ x, y: 0.68 * 0.48, z, scale: 0.48 }))
+    );
+  }, [columns, dummy, lanterns]);
+
+  return (
+    <>
+      <instancedMesh ref={columnRef} args={[undefined, undefined, columns.length]} castShadow>
+        <cylinderGeometry args={[0.25, 0.31, 2, 12]} />
+        <meshStandardMaterial color="#A98D65" roughness={0.82} />
+      </instancedMesh>
+      <instancedMesh ref={capitalRef} args={[undefined, undefined, columns.length]} castShadow>
+        <boxGeometry args={[0.64, 0.22, 0.68]} />
+        <meshStandardMaterial color="#C5A15A" metalness={0.42} roughness={0.48} />
+      </instancedMesh>
+      <instancedMesh ref={baseRef} args={[undefined, undefined, columns.length]} castShadow>
+        <cylinderGeometry args={[0.42, 0.45, 0.16, 12]} />
+        <meshStandardMaterial color="#876C4C" roughness={0.76} />
+      </instancedMesh>
+      <instancedMesh ref={lanternBodyRef} args={[undefined, undefined, lanterns.length]} castShadow>
+        <cylinderGeometry args={[0.13, 0.18, 0.34, 8]} />
+        <meshStandardMaterial color="#A66D25" metalness={0.72} roughness={0.3} />
+      </instancedMesh>
+      <instancedMesh ref={lanternBulbRef} args={[undefined, undefined, lanterns.length]}>
+        <sphereGeometry args={[0.1, 12, 12]} />
+        <meshBasicMaterial color="#E9B85F" />
+      </instancedMesh>
+      <instancedMesh ref={lanternStemRef} args={[undefined, undefined, lanterns.length]} castShadow>
+        <cylinderGeometry args={[0.035, 0.035, 0.38, 8]} />
+        <meshStandardMaterial color="#8F642E" metalness={0.8} roughness={0.28} />
+      </instancedMesh>
+      <instancedMesh ref={lanternRingRef} args={[undefined, undefined, lanterns.length]} castShadow>
+        <torusGeometry args={[0.18, 0.025, 8, 24]} />
+        <meshStandardMaterial color="#C5A15A" metalness={0.82} roughness={0.24} />
+      </instancedMesh>
+    </>
+  );
+}
+
 function EngravedWelcomePlaque({
   coupleMonogram,
   guestName,
@@ -227,23 +316,29 @@ function EngravedWelcomePlaque({
   );
 }
 
-function FlickeringLantern({
-  position,
-  scale = 1,
-  color = '#FFB64D',
-}: {
-  position: [number, number, number];
-  scale?: number;
-  color?: string;
-}) {
+function FlickeringPointLight({ color, phase }: { color: string; phase: number }) {
   const lightRef = useRef<THREE.PointLight>(null);
 
   useFrame(({ clock }) => {
     if (lightRef.current) {
-      lightRef.current.intensity = 1.8 + Math.sin(clock.elapsedTime * 4.5 + position[0]) * 0.16;
+      lightRef.current.intensity = 1.8 + Math.sin(clock.elapsedTime * 4.5 + phase) * 0.16;
     }
   });
 
+  return <pointLight ref={lightRef} position={[0, 0.2, 0.2]} color={color} intensity={1.8} distance={5} />;
+}
+
+function FlickeringLantern({
+  position,
+  scale = 1,
+  color = '#FFB64D',
+  illuminate = false,
+}: {
+  position: [number, number, number];
+  scale?: number;
+  color?: string;
+  illuminate?: boolean;
+}) {
   return (
     <group position={position} scale={scale}>
       <mesh position={[0, 0.18, 0]} castShadow>
@@ -254,7 +349,7 @@ function FlickeringLantern({
         <sphereGeometry args={[0.1, 12, 12]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <pointLight ref={lightRef} position={[0, 0.2, 0.2]} color={color} intensity={1.8} distance={5} />
+      {illuminate && <FlickeringPointLight color={color} phase={position[0]} />}
       <mesh position={[0, 0.48, 0]} castShadow>
         <cylinderGeometry args={[0.035, 0.035, 0.38, 8]} />
         <meshStandardMaterial color="#8F642E" metalness={0.8} roughness={0.28} />
@@ -729,29 +824,7 @@ export function PalaceGatesScene({
           </group>
         ))}
 
-        {courtyardColumns
-          .filter(({ z }) => z > -pathLength)
-          .map(({ x, z, side }) => (
-            <group key={`${x}-${z}`} position={[x, 0, z]}>
-              <mesh position={[0, 1, 0]} castShadow>
-                <cylinderGeometry args={[0.25, 0.31, 2, 12]} />
-                <meshStandardMaterial color="#A98D65" roughness={0.82} />
-              </mesh>
-              <mesh position={[0, 2.08, 0]} castShadow>
-                <boxGeometry args={[0.64, 0.22, 0.68]} />
-                <meshStandardMaterial color="#C5A15A" metalness={0.42} roughness={0.48} />
-              </mesh>
-              <mesh position={[0, -0.08, 0]} castShadow>
-                <cylinderGeometry args={[0.42, 0.45, 0.16, 12]} />
-                <meshStandardMaterial color="#876C4C" roughness={0.76} />
-              </mesh>
-              <FlickeringLantern
-                position={[side * -0.42, 0, 0.2]}
-                scale={0.48}
-                color="#E9B85F"
-              />
-            </group>
-          ))}
+        <CourtyardColonnade pathLength={pathLength} />
 
         <group>
           <mesh position={[-2.1, 1.9, 0]} castShadow receiveShadow>
@@ -782,8 +855,8 @@ export function PalaceGatesScene({
 
         <PalaceDoor hinge={1} isOpen={isOpen} onEnter={onEnter} />
         <PalaceDoor hinge={-1} isOpen={isOpen} onEnter={onEnter} />
-        <FlickeringLantern position={[-2.72, 2.72, 0.2]} />
-        <FlickeringLantern position={[2.72, 2.72, 0.2]} />
+        <FlickeringLantern position={[-2.72, 2.72, 0.2]} illuminate />
+        <FlickeringLantern position={[2.72, 2.72, 0.2]} illuminate />
 
         <group ref={welcomePlaqueRef} position={[0, 1.25, -5.5]}>
           <mesh castShadow>
