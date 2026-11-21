@@ -180,7 +180,7 @@ function InvitationJourney({ experience }: InvitationExperienceProps) {
             id="introduction"
             data-scroll-stage
             aria-labelledby="introduction-heading"
-            className="relative flex min-h-dvh items-center justify-center px-4 py-16"
+            className="invitation-intro-stage relative flex min-h-dvh items-center justify-center px-4 py-16"
           >
             <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0B0B12]/45 via-[#201512]/25 to-[#151018]/65" />
             <div className="relative w-full max-w-4xl pointer-events-auto">

@@ -141,6 +141,70 @@ body {
   }
 }
 
+@media (max-height: 700px) {
+  .invitation-intro-stage {
+    padding-block: 0.5rem;
+  }
+
+  .invitation-intro-card {
+    padding: 0.75rem;
+  }
+
+  .invitation-intro-blessing {
+    margin-bottom: 0.5rem;
+  }
+
+  .invitation-intro-sparkle {
+    margin-bottom: 0.25rem;
+  }
+
+  .invitation-intro-verse {
+    margin-block: 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .invitation-intro-verse cite {
+    margin-top: 0.25rem;
+  }
+
+  .invitation-intro-hosts {
+    margin-block: 0.5rem;
+  }
+
+  .invitation-intro-host-label {
+    margin-bottom: 0.125rem;
+  }
+
+  .invitation-intro-couple {
+    margin-block: 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .invitation-intro-couple-request {
+    margin-bottom: 0.25rem;
+  }
+
+  .invitation-intro-couple-separator {
+    margin-block: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .invitation-intro-date {
+    margin-top: 0.5rem;
+  }
+
+  .invitation-intro-guest-name {
+    font-size: 1rem;
+    line-height: 1.15;
+  }
+
+  .invitation-intro-guest-note {
+    font-size: 0.65rem;
+    line-height: 1.15;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
