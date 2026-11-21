@@ -1,4 +1,5 @@
-import { Wedding, WeddingEvent, Guest, GuestEventAccess, InvitationLog, ResolvedGuestExperience } from '@/types/database';
+import { randomUUID } from 'node:crypto';
+import { Wedding, WeddingEvent, Guest, GuestEventAccess, InvitationLog, ResolvedGuestExperience, AdminGuest } from '@/types/database';
 import { hashGuestToken } from '@/lib/security/token';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase/admin';
 
@@ -15,6 +16,7 @@ const INITIAL_WEDDING: Wedding = {
   rsvp_deadline: '2026-12-05T23:59:59Z',
   primary_color: '#3A0715',
   accent_color: '#C5A15A',
+  show_guest_max_attendees: false,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -34,6 +36,7 @@ const INITIAL_EVENTS: WeddingEvent[] = [
     dress_code: 'Festive Florals, Mustard Yellows & Vibrant Henna Attire',
     description: 'An enchanting evening of rhythmic dholak beats, festive singing, traditional henna, and celebration under golden canopies.',
     theme_color: '#D97706',
+    is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -51,6 +54,7 @@ const INITIAL_EVENTS: WeddingEvent[] = [
     dress_code: 'Black Tie, Formal Sherwani & Imperial Maroon / Antique Gold',
     description: 'The regal arrival of the Barat, the sacred Nikah vows, royal banquet, and the heartfelt Rukhsati.',
     theme_color: '#580F25',
+    is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -68,6 +72,7 @@ const INITIAL_EVENTS: WeddingEvent[] = [
     dress_code: 'Contemporary Formal, Champagne Gold, Soft Pastels & Ivory',
     description: 'A serene luxury reception welcoming our guests with soft candlelight, blooming white jasmines, and joyful blessings.',
     theme_color: '#C5A15A',
+    is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -157,6 +162,22 @@ const memoryStore = {
   ]),
 };
 
+export type WeddingAdminUpdate = Pick<
+  Wedding,
+  | 'title'
+  | 'couple_names'
+  | 'bride_name'
+  | 'groom_name'
+  | 'host_names'
+  | 'wedding_date'
+  | 'show_guest_max_attendees'
+>;
+
+export type WeddingEventAdminInput = Omit<
+  WeddingEvent,
+  'id' | 'wedding_id' | 'created_at' | 'updated_at'
+>;
+
 export class DatabaseService {
   /**
    * Resolves a guest token server-side, verifying validity, permissions, and returning authorized events only.
@@ -200,6 +221,7 @@ export class DatabaseService {
         .from('events')
         .select('*')
         .in('id', eventIds)
+        .eq('is_active', true)
         .order('event_date', { ascending: true });
 
       // Log opened action asynchronously
@@ -210,7 +232,15 @@ export class DatabaseService {
       });
 
       // Construct safe payload
-      const resolvedEvents = events || [];
+      const accessByEventId = new Map(
+        accessList.map((access: GuestEventAccess) => [access.event_id, access.max_attendees])
+      );
+      const resolvedEvents = (events || []).map((event: WeddingEvent) => ({
+        ...event,
+        guest_max_attendees: wedding.show_guest_max_attendees
+          ? accessByEventId.get(event.id) ?? guest.max_attendees
+          : null,
+      }));
 
       return {
         guest: {
@@ -234,7 +264,7 @@ export class DatabaseService {
 
     const accessList = memoryStore.guest_event_access.filter((a) => a.guest_id === guest.id);
     const eventIds = new Set(accessList.map((a) => a.event_id));
-    const permittedEvents = memoryStore.events.filter((e) => eventIds.has(e.id));
+    const permittedEvents = memoryStore.events.filter((e) => e.is_active && eventIds.has(e.id));
 
     // Sort by date
     permittedEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
@@ -259,7 +289,15 @@ export class DatabaseService {
         invitation_status: guest.invitation_status,
       },
       wedding,
-      events: permittedEvents,
+      events: permittedEvents.map((event) => {
+        const access = accessList.find((item) => item.event_id === event.id);
+        return {
+          ...event,
+          guest_max_attendees: wedding.show_guest_max_attendees
+            ? access?.max_attendees ?? guest.max_attendees
+            : null,
+        };
+      }),
     };
   }
 
@@ -267,18 +305,20 @@ export class DatabaseService {
    * Admin: Get invitation and event permission statistics
    */
   static async getDashboardMetrics() {
-    const guests = memoryStore.guests;
-    const events = memoryStore.events;
+    const [guests, events] = await Promise.all([
+      this.getAllGuests(),
+      this.getAllEvents(),
+    ]);
     const totalGuests = guests.length;
     const sentInvitations = guests.filter((g) => g.invitation_status === 'sent' || g.invitation_status === 'opened' || g.invitation_status === 'responded').length;
     const openedInvitations = guests.filter((g) => g.invitation_status === 'opened' || g.invitation_status === 'responded').length;
 
     const eventBreakdown = events.map((event) => {
-      const eventAccess = memoryStore.guest_event_access.filter((a) => a.event_id === event.id);
-
       return {
         event,
-        invitedGuestCount: eventAccess.length,
+        invitedGuestCount: guests.filter((guest) =>
+          guest.event_access.some((access) => access.event_id === event.id)
+        ).length,
       };
     });
 
@@ -293,14 +333,41 @@ export class DatabaseService {
   /**
    * Admin: Get all guests with their permissions and generated raw tokens
    */
-  static async getAllGuests() {
-    return memoryStore.guests.map((g) => {
-      const access = memoryStore.guest_event_access.filter((a) => a.guest_id === g.id);
-      const token = memoryStore.guestTokens.get(g.id) || 'demo-token';
+  static async getAllGuests(): Promise<AdminGuest[]> {
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data: guests, error: guestError } = await supabaseAdmin
+        .from('guests')
+        .select('id,wedding_id,display_name,phone,max_attendees,invitation_status,expires_at,notes,created_at,updated_at')
+        .order('created_at', { ascending: false });
+      if (guestError) throw new Error('Unable to load guests from the database.');
+
+      const guestIds = (guests ?? []).map((guest) => guest.id);
+      if (guestIds.length === 0) return [];
+
+      const { data: accessList, error: accessError } = await supabaseAdmin
+        .from('guest_event_access')
+        .select('*')
+        .in('guest_id', guestIds);
+      if (accessError) throw new Error('Unable to load guest event permissions.');
+
+      return (guests ?? []).map((guest) => ({
+          ...guest,
+          token: memoryStore.guestTokens.get(guest.id) ?? null,
+          event_access: (accessList ?? [])
+            .filter((access) => access.guest_id === guest.id)
+            .map(({ event_id, max_attendees }) => ({ event_id, max_attendees })),
+        }));
+    }
+
+    return memoryStore.guests.map((guest) => {
+      const { token_hash: _tokenHash, ...adminGuest } = guest;
+      void _tokenHash;
       return {
-        ...g,
-        token,
-        event_access: access,
+        ...adminGuest,
+        token: memoryStore.guestTokens.get(guest.id) ?? null,
+        event_access: memoryStore.guest_event_access
+          .filter((access) => access.guest_id === guest.id)
+          .map(({ event_id, max_attendees }) => ({ event_id, max_attendees })),
       };
     });
   }
@@ -318,13 +385,64 @@ export class DatabaseService {
     const { generateGuestToken } = await import('@/lib/security/token');
     const token = generateGuestToken();
     const tokenHash = hashGuestToken(token);
-    const guestId = 'guest_' + Math.random().toString(36).substring(2, 10);
-    const maxAttendees = Math.max(1, params.maxAttendees ?? 1);
+    const displayName = params.displayName.trim();
+    const allowedEventIds = [...new Set(params.allowedEventIds)];
+    const maxAttendees = params.maxAttendees ?? 1;
+    if (!displayName || !Number.isInteger(maxAttendees) || maxAttendees < 1 || maxAttendees > 50) {
+      throw new Error('Guest details are invalid.');
+    }
+    if (allowedEventIds.length === 0) throw new Error('At least one event must be selected.');
+
+    const wedding = await this.getDefaultWedding();
+    const activeEvents = (await this.getAllEvents()).filter((event) => event.is_active);
+    if (allowedEventIds.some((eventId) => !activeEvents.some((event) => event.id === eventId))) {
+      throw new Error('One or more selected events are unavailable.');
+    }
+
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data: guest, error: guestError } = await supabaseAdmin
+        .from('guests')
+        .insert({
+          wedding_id: wedding.id,
+          display_name: displayName,
+          phone: params.phone.trim(),
+          token_hash: tokenHash,
+          max_attendees: maxAttendees,
+          invitation_status: 'created',
+          expires_at: null,
+          notes: params.notes?.trim() || null,
+        })
+        .select('*')
+        .single();
+      if (guestError || !guest) throw new Error('Unable to create guest invitation.');
+
+      const accessRows = allowedEventIds.map((eventId) => ({
+        guest_id: guest.id,
+        event_id: eventId,
+        max_attendees: maxAttendees,
+      }));
+      const { error: accessError } = await supabaseAdmin
+        .from('guest_event_access')
+        .insert(accessRows);
+      if (accessError) {
+        const { error: rollbackError } = await supabaseAdmin
+          .from('guests')
+          .delete()
+          .eq('id', guest.id);
+        if (rollbackError) console.error('Failed to roll back a guest created without event access.', rollbackError);
+        throw new Error('Unable to save guest event permissions.');
+      }
+
+      memoryStore.guestTokens.set(guest.id, token);
+      return { guest, token };
+    }
+
+    const guestId = randomUUID();
 
     const newGuest: Guest = {
       id: guestId,
-      wedding_id: INITIAL_WEDDING.id,
-      display_name: params.displayName.trim(),
+      wedding_id: wedding.id,
+      display_name: displayName,
       phone: params.phone.trim(),
       token_hash: tokenHash,
       max_attendees: maxAttendees,
@@ -351,17 +469,95 @@ export class DatabaseService {
     return { guest: newGuest, token };
   }
 
+  static async updateGuest(
+    guestId: string,
+    params: {
+      displayName: string;
+      phone: string;
+      allowedEventIds: string[];
+      maxAttendees: number;
+      notes?: string;
+    }
+  ): Promise<Guest> {
+    const displayName = params.displayName.trim();
+    const allowedEventIds = [...new Set(params.allowedEventIds)];
+    if (!displayName || !Number.isInteger(params.maxAttendees) || params.maxAttendees < 1 || params.maxAttendees > 50) {
+      throw new Error('Guest details are invalid.');
+    }
+    if (allowedEventIds.length === 0) throw new Error('At least one event must be selected.');
+
+    const wedding = await this.getDefaultWedding();
+    const activeEvents = (await this.getAllEvents()).filter((event) => event.is_active);
+    if (allowedEventIds.some((eventId) => !activeEvents.some((event) => event.id === eventId))) {
+      throw new Error('One or more selected events are unavailable.');
+    }
+
+    const notes = params.notes?.trim() || null;
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.rpc('admin_update_guest', {
+        p_guest_id: guestId,
+        p_display_name: displayName,
+        p_phone: params.phone.trim(),
+        p_max_attendees: params.maxAttendees,
+        p_notes: notes,
+        p_event_ids: allowedEventIds,
+      });
+      if (error) throw new Error('Unable to update guest invitation.');
+      const updatedGuest = Array.isArray(data) ? data[0] : data;
+      if (!updatedGuest) throw new Error('Guest not found.');
+      return updatedGuest;
+    }
+
+    const guest = memoryStore.guests.find(
+      (item) => item.id === guestId && item.wedding_id === wedding.id
+    );
+    if (!guest) throw new Error('Guest not found.');
+
+    guest.display_name = displayName;
+    guest.phone = params.phone.trim();
+    guest.max_attendees = params.maxAttendees;
+    guest.notes = notes;
+    guest.updated_at = new Date().toISOString();
+    memoryStore.guest_event_access = memoryStore.guest_event_access.filter(
+      (access) => access.guest_id !== guestId
+    );
+    memoryStore.guest_event_access.push(...allowedEventIds.map((eventId) => ({
+      id: randomUUID(),
+      guest_id: guestId,
+      event_id: eventId,
+      max_attendees: params.maxAttendees,
+      created_at: new Date().toISOString(),
+    })));
+    return guest;
+  }
+
   /**
    * Admin: Regenerate guest token
    */
   static async regenerateGuestToken(guestId: string): Promise<string> {
-    const guest = memoryStore.guests.find((g) => g.id === guestId);
-    if (!guest) throw new Error('Guest not found');
-
     const { generateGuestToken } = await import('@/lib/security/token');
     const newToken = generateGuestToken();
-    guest.token_hash = hashGuestToken(newToken);
-    guest.updated_at = new Date().toISOString();
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('guests')
+        .update({
+          token_hash: hashGuestToken(newToken),
+          invitation_status: 'created',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', guestId)
+        .select('id')
+        .maybeSingle();
+      if (error) throw new Error('Unable to regenerate this invitation link.');
+      if (!data) throw new Error('Guest not found.');
+    } else {
+      const guest = memoryStore.guests.find((item) => item.id === guestId);
+      if (!guest) throw new Error('Guest not found.');
+      guest.token_hash = hashGuestToken(newToken);
+      guest.invitation_status = 'created';
+      guest.updated_at = new Date().toISOString();
+    }
+
     memoryStore.guestTokens.set(guestId, newToken);
     return newToken;
   }
@@ -370,7 +566,18 @@ export class DatabaseService {
    * Admin: Revoke guest token
    */
   static async revokeGuest(guestId: string): Promise<boolean> {
-    const guest = memoryStore.guests.find((g) => g.id === guestId);
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('guests')
+        .update({ invitation_status: 'revoked', updated_at: new Date().toISOString() })
+        .eq('id', guestId)
+        .select('id')
+        .maybeSingle();
+      if (error) throw new Error('Unable to revoke this invitation.');
+      return Boolean(data);
+    }
+
+    const guest = memoryStore.guests.find((item) => item.id === guestId);
     if (!guest) return false;
     guest.invitation_status = 'revoked';
     guest.updated_at = new Date().toISOString();
@@ -381,6 +588,26 @@ export class DatabaseService {
    * Admin: Mark invitation as sent
    */
   static async markAsSent(guestId: string): Promise<boolean> {
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('guests')
+        .update({ invitation_status: 'sent', updated_at: new Date().toISOString() })
+        .eq('id', guestId)
+        .eq('invitation_status', 'created')
+        .select('id')
+        .maybeSingle();
+      if (error) throw new Error('Unable to update invitation status.');
+      if (data) return true;
+
+      const { data: existingGuest, error: lookupError } = await supabaseAdmin
+        .from('guests')
+        .select('id')
+        .eq('id', guestId)
+        .maybeSingle();
+      if (lookupError) throw new Error('Unable to verify invitation status.');
+      return Boolean(existingGuest);
+    }
+
     const guest = memoryStore.guests.find((g) => g.id === guestId);
     if (!guest) return false;
     if (guest.invitation_status === 'created') {
@@ -394,6 +621,17 @@ export class DatabaseService {
    * Get default wedding details
    */
   static async getDefaultWedding(): Promise<Wedding> {
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('weddings')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error('Unable to load wedding settings.');
+      if (!data) throw new Error('No wedding has been configured.');
+      return data;
+    }
     return memoryStore.weddings[0];
   }
 
@@ -401,6 +639,83 @@ export class DatabaseService {
    * Get all wedding events
    */
   static async getAllEvents(): Promise<WeddingEvent[]> {
-    return memoryStore.events;
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('events')
+        .select('*')
+        .order('event_date', { ascending: true })
+        .order('start_time', { ascending: true });
+      if (error) throw new Error('Unable to load wedding events.');
+      return data ?? [];
+    }
+    return [...memoryStore.events].sort((a, b) =>
+      `${a.event_date} ${a.start_time}`.localeCompare(`${b.event_date} ${b.start_time}`)
+    );
+  }
+
+  static async updateWedding(input: WeddingAdminUpdate): Promise<Wedding> {
+    const wedding = await this.getDefaultWedding();
+    const updatedAt = new Date().toISOString();
+
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('weddings')
+        .update({ ...input, updated_at: updatedAt })
+        .eq('id', wedding.id)
+        .select('*')
+        .single();
+      if (error || !data) throw new Error('Unable to save wedding settings.');
+      return data;
+    }
+
+    Object.assign(wedding, input, { updated_at: updatedAt });
+    return wedding;
+  }
+
+  static async createEvent(input: WeddingEventAdminInput): Promise<WeddingEvent> {
+    const wedding = await this.getDefaultWedding();
+    const event = {
+      ...input,
+      wedding_id: wedding.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('events')
+        .insert(event)
+        .select('*')
+        .single();
+      if (error || !data) throw new Error('Unable to create wedding event.');
+      return data;
+    }
+
+    const createdEvent: WeddingEvent = { id: randomUUID(), ...event };
+    memoryStore.events.push(createdEvent);
+    return createdEvent;
+  }
+
+  static async updateEvent(id: string, input: WeddingEventAdminInput): Promise<WeddingEvent> {
+    const wedding = await this.getDefaultWedding();
+    const updatedAt = new Date().toISOString();
+
+    if (isSupabaseAdminConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('events')
+        .update({ ...input, updated_at: updatedAt })
+        .eq('id', id)
+        .eq('wedding_id', wedding.id)
+        .select('*')
+        .maybeSingle();
+      if (error) throw new Error('Unable to save wedding event.');
+      if (!data) throw new Error('Wedding event not found.');
+      return data;
+    }
+
+    const event = memoryStore.events.find((item) => item.id === id && item.wedding_id === wedding.id);
+    if (!event) throw new Error('Wedding event not found.');
+    Object.assign(event, input, { updated_at: updatedAt });
+    return event;
   }
 }

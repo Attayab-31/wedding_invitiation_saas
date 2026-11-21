@@ -1,27 +1,30 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Wedding, WeddingEvent } from '@/types/database';
+import React, { useState } from 'react';
+import { AdminGuest, Wedding, WeddingEvent } from '@/types/database';
 import {
   MessageCircle,
   Copy,
   Check,
-  ExternalLink,
   Send,
-  Sparkles,
   Download,
   CheckCircle2,
-  Filter,
 } from 'lucide-react';
 
+const messageTemplates = [
+  { id: 'formal', label: 'Royal Formal English', desc: 'Elegant traditional invitation phrasing' },
+  { id: 'romanUrdu', label: 'Traditional Roman Urdu', desc: 'Familiar cultural warmth with Duas' },
+  { id: 'warm', label: 'Warm Family & Friends', desc: 'Direct, personal, and celebratory' },
+] as const;
+
 interface WhatsAppHubProps {
-  initialGuests: any[];
+  initialGuests: AdminGuest[];
   wedding: Wedding;
   events: WeddingEvent[];
 }
 
-export function WhatsAppHub({ initialGuests, wedding, events }: WhatsAppHubProps) {
-  const [guests, setGuests] = useState(initialGuests);
+export function WhatsAppHub({ initialGuests, wedding }: WhatsAppHubProps) {
+  const [guests, setGuests] = useState<AdminGuest[]>(initialGuests);
   const [template, setTemplate] = useState<'formal' | 'warm' | 'romanUrdu'>('formal');
   const [filter, setFilter] = useState<'all' | 'unsent' | 'sent'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -85,14 +88,16 @@ ${wedding.host_names}`;
 
   const selectedGuest = guests.find((g) => g.id === selectedGuestId) || guests[0];
 
-  const handleCopyMessage = (guest: any) => {
+  const handleCopyMessage = (guest: AdminGuest) => {
+    if (!guest.token) return;
     const msg = generateMessage(guest.display_name, guest.token);
     navigator.clipboard.writeText(msg);
     setCopiedId(`msg_${guest.id}`);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleCopyLink = (guest: any) => {
+  const handleCopyLink = (guest: AdminGuest) => {
+    if (!guest.token) return;
     const link = `${origin}/invite/${guest.token}`;
     navigator.clipboard.writeText(link);
     setCopiedId(`link_${guest.id}`);
@@ -114,7 +119,8 @@ ${wedding.host_names}`;
     }
   };
 
-  const openWhatsApp = (guest: any) => {
+  const openWhatsApp = (guest: AdminGuest) => {
+    if (!guest.token) return;
     const msg = generateMessage(guest.display_name, guest.token);
     const encoded = encodeURIComponent(msg);
     const waUrl = `https://wa.me/${guest.phone}?text=${encoded}`;
@@ -123,10 +129,17 @@ ${wedding.host_names}`;
   };
 
   const exportWhatsAppCSV = () => {
+    const exportableGuests = filteredGuests.filter((guest) => guest.token);
+    if (exportableGuests.length === 0) {
+      alert('Generate invitation links from the Guest List before exporting messages.');
+      return;
+    }
+
     const headers = ['guest_name', 'phone', 'whatsapp_link', 'invitation_url', 'message_text'];
     const lines = [headers.join(',')];
 
-    filteredGuests.forEach((g) => {
+    exportableGuests.forEach((g) => {
+      if (!g.token) return;
       const msg = generateMessage(g.display_name, g.token);
       const encoded = encodeURIComponent(msg);
       const waUrl = `https://wa.me/${g.phone}?text=${encoded}`;
@@ -181,14 +194,10 @@ ${wedding.host_names}`;
           </span>
 
           <div className="space-y-2">
-            {[
-              { id: 'formal', label: 'Royal Formal English', desc: 'Elegant traditional invitation phrasing' },
-              { id: 'romanUrdu', label: 'Traditional Roman Urdu', desc: 'Familiar cultural warmth with Duas' },
-              { id: 'warm', label: 'Warm Family & Friends', desc: 'Direct, personal, and celebratory' },
-            ].map((t) => (
+            {messageTemplates.map((t) => (
               <label
                 key={t.id}
-                onClick={() => setTemplate(t.id as any)}
+                onClick={() => setTemplate(t.id)}
                 className={`block p-3 rounded-lg border cursor-pointer transition-all ${
                   template === t.id
                     ? 'bg-[#3A0715] border-[#C5A15A] shadow-md ring-1 ring-[#C5A15A]'
@@ -229,7 +238,7 @@ ${wedding.host_names}`;
                 </div>
               </div>
 
-              {selectedGuest && (
+              {selectedGuest?.token && (
                 <button
                   onClick={() => openWhatsApp(selectedGuest)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-royal font-semibold cursor-pointer shadow transition-transform active:scale-95"
@@ -241,7 +250,7 @@ ${wedding.host_names}`;
             </div>
 
             {/* Bubble */}
-            {selectedGuest && (
+            {selectedGuest?.token ? (
               <div className="max-w-lg bg-[#075E54] text-white p-4 rounded-xl rounded-tl-none shadow-md font-sans text-xs leading-relaxed space-y-2 relative">
                 <pre className="whitespace-pre-wrap font-sans">
                   {generateMessage(selectedGuest.display_name, selectedGuest.token)}
@@ -251,7 +260,11 @@ ${wedding.host_names}`;
                   <CheckCircle2 className="w-3 h-3 text-emerald-300 inline" />
                 </div>
               </div>
-            )}
+            ) : selectedGuest ? (
+              <p className="max-w-lg rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-xs text-amber-100/80">
+                This guest has no recoverable invitation token. Generate a fresh link from the Guest List before sending.
+              </p>
+            ) : null}
           </div>
 
           {selectedGuest && (
@@ -260,17 +273,22 @@ ${wedding.host_names}`;
               <div className="flex gap-2">
                 <button
                   onClick={() => handleCopyMessage(selectedGuest)}
+                  disabled={!selectedGuest.token}
                   className="hover:underline text-[11px] text-emerald-300"
                 >
-                  {copiedId === `msg_${selectedGuest.id}` ? 'Copied Message!' : 'Copy Text'}
+                  {!selectedGuest.token ? 'No link yet' : copiedId === `msg_${selectedGuest.id}` ? 'Copied Message!' : 'Copy Text'}
                 </button>
-                <span>•</span>
-                <button
-                  onClick={() => handleCopyLink(selectedGuest)}
-                  className="hover:underline text-[11px] text-emerald-300"
-                >
-                  {copiedId === `link_${selectedGuest.id}` ? 'Copied URL!' : 'Copy URL'}
-                </button>
+                {selectedGuest.token && (
+                  <>
+                    <span>•</span>
+                    <button
+                      onClick={() => handleCopyLink(selectedGuest)}
+                      className="hover:underline text-[11px] text-emerald-300"
+                    >
+                      {copiedId === `link_${selectedGuest.id}` ? 'Copied URL!' : 'Copy URL'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -361,6 +379,7 @@ ${wedding.host_names}`;
                         {/* Direct WhatsApp Button */}
                         <button
                           onClick={() => openWhatsApp(guest)}
+                          disabled={!guest.token}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-royal font-semibold text-xs cursor-pointer shadow transition-transform active:scale-95"
                           title="Open WhatsApp chat with prefilled invitation message"
                         >
@@ -371,6 +390,7 @@ ${wedding.host_names}`;
                         {/* Copy Message */}
                         <button
                           onClick={() => handleCopyMessage(guest)}
+                          disabled={!guest.token}
                           className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A]"
                           title="Copy personalized text"
                         >

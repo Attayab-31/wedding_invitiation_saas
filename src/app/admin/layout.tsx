@@ -6,17 +6,23 @@ import {
   MessageCircle,
   CalendarDays,
   ExternalLink,
+  Settings,
 } from 'lucide-react';
+import { AdminSignOutButton } from '@/components/admin/AdminSignOutButton';
+import { getAdminSession } from '@/lib/security/admin-auth';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const adminSession = await getAdminSession();
+
   return (
     <div className="min-h-screen bg-[#1F1014] text-[#FAF7F2] flex flex-col font-sans">
       {/* Admin Top Navigation */}
-      <nav className="border-b border-[#B88E3E]/30 bg-[#2C131A]/95 backdrop-blur-md sticky top-0 z-40">
+      {adminSession && (
+        <nav className="border-b border-[#B88E3E]/30 bg-[#2C131A]/95 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#580F25] border-2 border-[#DFCA94] flex items-center justify-center font-royal font-bold text-xs text-[#FAF7F2] shadow-sm">
@@ -33,6 +39,10 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <span className="hidden text-[10px] font-royal uppercase tracking-wider text-[#DFCA94] sm:inline">
+              Owner
+            </span>
+            <AdminSignOutButton />
             <Link
               href="/"
               target="_blank"
@@ -43,12 +53,13 @@ export default function AdminLayout({
             </Link>
           </div>
         </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Main Admin Content with Navigation Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 pb-6 border-b border-[#B88E3E]/20 mb-8">
+        {adminSession && <div className="flex flex-wrap gap-2 pb-6 border-b border-[#B88E3E]/20 mb-8">
           <Link
             href="/admin"
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-royal font-bold tracking-wider uppercase bg-[#3A0715] border border-[#B88E3E]/40 text-[#DFCA94] hover:bg-[#580F25] hover:text-[#FAF7F2] transition-all"
@@ -88,8 +99,14 @@ export default function AdminLayout({
             <CalendarDays className="w-4 h-4 text-[#B88E3E]" />
             <span>Events &amp; Venues</span>
           </Link>
-
-        </div>
+          <Link
+            href="/admin/settings"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-royal font-bold tracking-wider uppercase bg-[#3A0715] border border-[#B88E3E]/40 text-[#DFCA94] hover:bg-[#580F25] hover:text-[#FAF7F2] transition-all"
+          >
+            <Settings className="w-4 h-4 text-[#B88E3E]" />
+            <span>Invitation Settings</span>
+          </Link>
+        </div>}
 
         {children}
       </div>

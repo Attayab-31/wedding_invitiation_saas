@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService } from '@/lib/data/db-service';
 import { normalizePakistaniPhone } from '@/lib/security/phone';
+import { authorizeAdminApi } from '@/lib/security/admin-auth';
 
 interface ImportRow {
   name: string;
@@ -9,6 +10,9 @@ interface ImportRow {
 }
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await authorizeAdminApi(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await req.json();
     const { rows } = body as { rows: ImportRow[] };
@@ -17,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No data provided to import' }, { status: 400 });
     }
 
-    const events = await DatabaseService.getAllEvents();
+    const events = (await DatabaseService.getAllEvents()).filter((event) => event.is_active);
     const eventMap = new Map<string, string>();
     events.forEach((e) => {
       eventMap.set(e.event_type.toLowerCase(), e.id);
@@ -65,8 +69,8 @@ export async function POST(req: NextRequest) {
           token,
           allowedEvents: row.allowedEvents,
         });
-      } catch (err: any) {
-        errors.push({ row: i + 1, error: err.message });
+      } catch {
+        errors.push({ row: i + 1, error: 'Unable to import this guest row' });
       }
     }
 
@@ -77,7 +81,8 @@ export async function POST(req: NextRequest) {
       errors,
       imported: importedResults,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (error) {
+    console.error('Failed to import admin guest CSV.', error);
+    return NextResponse.json({ success: false, error: 'Unable to import guests.' }, { status: 500 });
   }
 }

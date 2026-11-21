@@ -14,6 +14,7 @@ export interface Wedding {
   rsvp_deadline: string | null;
   primary_color: string;
   accent_color: string;
+  show_guest_max_attendees: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +33,7 @@ export interface WeddingEvent {
   dress_code: string | null;
   description: string | null;
   theme_color: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -100,5 +102,10 @@ export interface ResolvedGuestExperience {
     invitation_status: InvitationStatus;
   };
   wedding: Wedding;
-  events: WeddingEvent[];
+  events: Array<WeddingEvent & { guest_max_attendees: number | null }>;
+}
+
+export interface AdminGuest extends Omit<Guest, 'token_hash'> {
+  token: string | null;
+  event_access: Array<Pick<GuestEventAccess, 'event_id' | 'max_attendees'>>;
 }

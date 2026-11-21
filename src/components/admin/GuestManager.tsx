@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { WeddingEvent } from '@/types/database';
+import { AdminGuest, Guest, WeddingEvent } from '@/types/database';
 import {
   Search,
   Plus,
@@ -11,19 +11,19 @@ import {
   RefreshCw,
   Ban,
   Check,
-  Send,
+  Pencil,
   AlertCircle,
   X,
   MessageCircle,
 } from 'lucide-react';
 
 interface GuestManagerProps {
-  initialGuests: any[];
+  initialGuests: AdminGuest[];
   events: WeddingEvent[];
 }
 
 export function GuestManager({ initialGuests, events }: GuestManagerProps) {
-  const [guests, setGuests] = useState(initialGuests);
+  const [guests, setGuests] = useState<AdminGuest[]>(initialGuests);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventFilter, setEventFilter] = useState('all');
@@ -33,8 +33,11 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newPhone, setNewPhone] = useState('');
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>(events.map((e) => e.id));
+  const activeEvents = events.filter((event) => event.is_active);
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>(activeEvents.map((e) => e.id));
   const [newNotes, setNewNotes] = useState('');
+  const [newMaxAttendees, setNewMaxAttendees] = useState(1);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,7 +52,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
 
     const matchesEvent =
       eventFilter === 'all' ||
-      g.event_access?.some((a: any) => a.event_id === eventFilter);
+      g.event_access.some((access) => access.event_id === eventFilter);
 
     return matchesSearch && matchesStatus && matchesEvent;
   });
@@ -62,21 +65,23 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleRegenerateToken = async (guestId: string) => {
-    if (!confirm('Are you sure you want to regenerate this invitation token? The old link will stop working.')) return;
+  const handleRegenerateToken = async (guest: AdminGuest) => {
+    if (guest.token && !confirm('Regenerate this invitation link? The old link will stop working.')) return;
     try {
-      const res = await fetch(`/api/admin/guests/${guestId}`, {
+      const res = await fetch(`/api/admin/guests/${guest.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'regenerate_token' }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setGuests((prev) =>
-          prev.map((g) => (g.id === guestId ? { ...g, token: data.token } : g))
-        );
-        alert('New token generated successfully!');
+      const data = await res.json() as { success?: boolean; token?: string; error?: string };
+      if (!res.ok || !data.success || !data.token) {
+        alert(data.error || 'Failed to generate an invitation link.');
+        return;
       }
+      setGuests((prev) =>
+        prev.map((g) => (g.id === guest.id ? { ...g, token: data.token ?? null } : g))
+      );
+      alert('A new invitation link is ready.');
     } catch {
       alert('Failed to regenerate token.');
     }
@@ -90,7 +95,11 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'revoke' }),
       });
-      const data = await res.json();
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Failed to revoke invitation.');
+        return;
+      }
       if (data.success) {
         setGuests((prev) =>
           prev.map((g) => (g.id === guestId ? { ...g, invitation_status: 'revoked' } : g))
@@ -101,60 +110,90 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
     }
   };
 
-  const handleMarkSent = async (guestId: string) => {
-    try {
-      const res = await fetch(`/api/admin/guests/${guestId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mark_sent' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setGuests((prev) =>
-          prev.map((g) => (g.id === guestId ? { ...g, invitation_status: 'sent' } : g))
-        );
-      }
-    } catch {
-      alert('Failed to update status.');
-    }
+  const openAddGuest = () => {
+    setEditingGuestId(null);
+    setNewDisplayName('');
+    setNewPhone('');
+    setNewNotes('');
+    setNewMaxAttendees(1);
+    setSelectedEventIds(activeEvents.map((event) => event.id));
+    setAddError('');
+    setIsAddModalOpen(true);
   };
 
-  const handleAddGuest = async (e: React.FormEvent) => {
+  const openEditGuest = (guest: AdminGuest) => {
+    setEditingGuestId(guest.id);
+    setNewDisplayName(guest.display_name);
+    setNewPhone(guest.phone);
+    setNewNotes(guest.notes ?? '');
+    setNewMaxAttendees(guest.max_attendees);
+    const activeEventIds = new Set(activeEvents.map((event) => event.id));
+    setSelectedEventIds(guest.event_access
+      .filter((access) => activeEventIds.has(access.event_id))
+      .map((access) => access.event_id));
+    setAddError('');
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveGuest = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError('');
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/admin/guests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName: newDisplayName,
-          phone: newPhone,
-          allowedEventIds: selectedEventIds,
-          notes: newNotes,
-        }),
-      });
+      const isEditing = editingGuestId !== null;
+      const res = await fetch(
+        isEditing ? `/api/admin/guests/${editingGuestId}` : '/api/admin/guests',
+        {
+          method: isEditing ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(isEditing ? { action: 'update' } : {}),
+            displayName: newDisplayName,
+            phone: newPhone,
+            allowedEventIds: selectedEventIds,
+            notes: newNotes,
+            maxAttendees: newMaxAttendees,
+          }),
+        }
+      );
 
-      const data = await res.json();
+      const data = await res.json() as {
+        success?: boolean;
+        error?: string;
+        guest?: Omit<Guest, 'token_hash'>;
+        token?: string;
+      };
       if (!res.ok || !data.success) {
         setAddError(data.error || 'Failed to add guest');
         setIsSubmitting(false);
         return;
       }
 
-      // Add to local state
-      const createdGuest = {
+      if (!data.guest) {
+        setAddError('The server did not return the saved guest.');
+        return;
+      }
+      const createdGuest: AdminGuest = {
         ...data.guest,
-        token: data.token,
-        event_access: selectedEventIds.map((id) => ({ event_id: id })),
+        token: isEditing
+          ? guests.find((guest) => guest.id === editingGuestId)?.token ?? null
+          : data.token ?? null,
+        event_access: selectedEventIds.map((id) => ({
+          event_id: id,
+          max_attendees: newMaxAttendees,
+        })),
       };
 
-      setGuests([createdGuest, ...guests]);
+      setGuests((current) => isEditing
+        ? current.map((guest) => guest.id === editingGuestId ? createdGuest : guest)
+        : [createdGuest, ...current]);
       setIsAddModalOpen(false);
+      setEditingGuestId(null);
       setNewDisplayName('');
       setNewPhone('');
       setNewNotes('');
+      setNewMaxAttendees(1);
     } catch {
       setAddError('Network error while adding guest.');
     } finally {
@@ -176,7 +215,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={openAddGuest}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#580F25] to-[#3A0715] border border-[#C5A15A] text-[#E6D2A0] text-xs font-royal font-semibold uppercase tracking-wider shadow-lg hover:shadow-[0_0_15px_rgba(197,161,90,0.3)] transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4 text-[#C5A15A]" />
@@ -234,6 +273,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
             <tr>
               <th className="py-3.5 px-4">Guest Name</th>
               <th className="py-3.5 px-4">Phone</th>
+              <th className="py-3.5 px-4">Max Guests</th>
               <th className="py-3.5 px-4">Permitted Events</th>
               <th className="py-3.5 px-4">Status</th>
               <th className="py-3.5 px-4 text-right">Actions</th>
@@ -242,14 +282,14 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
           <tbody className="divide-y divide-[#C5A15A]/10 font-sans">
             {filteredGuests.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-[#E6D2A0]/60 font-serif italic">
+                <td colSpan={6} className="py-8 text-center text-[#E6D2A0]/60 font-serif italic">
                   No matching guests found.
                 </td>
               </tr>
             ) : (
               filteredGuests.map((guest) => {
                 const guestEvents = events.filter((e) =>
-                  guest.event_access?.some((a: any) => a.event_id === e.id)
+                  guest.event_access.some((access) => access.event_id === e.id)
                 );
 
                 const status =
@@ -280,6 +320,10 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                       {guest.phone}
                     </td>
 
+                    <td className="py-3.5 px-4 font-royal text-xs font-semibold text-[#E6D2A0]">
+                      {guest.max_attendees}
+                    </td>
+
                     <td className="py-3.5 px-4">
                       <div className="flex flex-wrap gap-1">
                         {guestEvents.map((e) => (
@@ -303,28 +347,45 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Copy Link */}
-                        <button
-                          onClick={() => copyInviteLink(guest.id, guest.token)}
-                          className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A] transition-colors"
-                          title="Copy unique invitation link"
-                        >
-                          {copiedId === guest.id ? (
-                            <Check className="w-4 h-4 text-emerald-400" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </button>
+                        {guest.token ? (
+                          <>
+                            <button
+                              onClick={() => copyInviteLink(guest.id, guest.token!)}
+                              className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A] transition-colors"
+                              title="Copy unique invitation link"
+                            >
+                              {copiedId === guest.id ? (
+                                <Check className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                            <Link
+                              href={`/invite/${guest.token}`}
+                              target="_blank"
+                              className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A] transition-colors"
+                              title="Open 3D invitation experience"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleRegenerateToken(guest)}
+                            className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A] transition-colors"
+                            title="Generate a fresh secure invitation link"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        )}
 
-                        {/* Open Experience */}
-                        <Link
-                          href={`/invite/${guest.token}`}
-                          target="_blank"
-                          className="p-1.5 rounded hover:bg-[#3A0715] text-[#C5A15A] transition-colors"
-                          title="Open 3D invitation experience"
+                        <button
+                          onClick={() => openEditGuest(guest)}
+                          className="p-1.5 rounded hover:bg-[#3A0715] text-[#E6D2A0]/80 transition-colors"
+                          title="Edit guest, attendee limit, and event permissions"
                         >
-                          <ExternalLink className="w-4 h-4" />
-                        </Link>
+                          <Pencil className="w-4 h-4" />
+                        </button>
 
                         {/* WhatsApp Hub Link */}
                         <Link
@@ -337,7 +398,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
 
                         {/* Regenerate Token */}
                         <button
-                          onClick={() => handleRegenerateToken(guest.id)}
+                          onClick={() => handleRegenerateToken(guest)}
                           className="p-1.5 rounded hover:bg-[#3A0715] text-[#E6D2A0]/70 hover:text-[#E6D2A0] transition-colors"
                           title="Regenerate cryptographic token"
                         >
@@ -366,19 +427,21 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
 
       {/* Add Guest Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="mughal-border max-w-lg w-full bg-[#20050D] p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="guest-editor-title" className="mughal-border my-auto max-h-[92dvh] w-full max-w-lg space-y-6 overflow-y-auto rounded-xl bg-[#20050D] p-6 shadow-2xl md:p-8">
             <div className="flex items-center justify-between border-b border-[#C5A15A]/20 pb-4">
               <div>
-                <h3 className="text-xl font-royal font-bold text-gold-gradient">
-                  Add New Guest Invitation
+                <h3 id="guest-editor-title" className="text-xl font-royal font-bold text-gold-gradient">
+                  {editingGuestId ? 'Edit Guest Invitation' : 'Add New Guest Invitation'}
                 </h3>
                 <p className="text-xs text-[#E6D2A0]/70 font-serif italic">
-                  Creates secure bearer token &amp; function permissions
+                  Set guest details, event permissions, and attendee limit.
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsAddModalOpen(false)}
+                aria-label="Close guest editor"
                 className="text-[#E6D2A0]/70 hover:text-[#E6D2A0]"
               >
                 <X className="w-5 h-5" />
@@ -392,7 +455,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
               </div>
             )}
 
-            <form onSubmit={handleAddGuest} className="space-y-4">
+            <form onSubmit={handleSaveGuest} className="space-y-4">
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#C5A15A] font-royal mb-1">
                   Guest / Family Display Name *
@@ -404,6 +467,22 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                   value={newDisplayName}
                   onChange={(e) => setNewDisplayName(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-lg bg-[#191516] border border-[#C5A15A]/30 text-xs text-[#F8F1E5] focus:outline-none focus:border-[#C5A15A]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="guest-max-attendees" className="mb-1 block font-royal text-xs uppercase tracking-wider text-[#C5A15A]">
+                  Maximum invited guests
+                </label>
+                <input
+                  id="guest-max-attendees"
+                  type="number"
+                  required
+                  min={1}
+                  max={50}
+                  value={newMaxAttendees}
+                  onChange={(change) => setNewMaxAttendees(Number(change.target.value))}
+                  className="w-full rounded-lg border border-[#C5A15A]/30 bg-[#191516] px-3.5 py-2 text-xs text-[#F8F1E5] focus:border-[#C5A15A] focus:outline-none"
                 />
               </div>
 
@@ -426,7 +505,7 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                   Invited Functions *
                 </label>
                 <div className="space-y-2">
-                  {events.map((evt) => {
+                  {activeEvents.map((evt) => {
                     const isChecked = selectedEventIds.includes(evt.id);
                     return (
                       <label
@@ -437,11 +516,9 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                           type="checkbox"
                           checked={isChecked}
                           onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedEventIds([...selectedEventIds, evt.id]);
-                            } else {
-                              setSelectedEventIds(selectedEventIds.filter((id) => id !== evt.id));
-                            }
+                            setSelectedEventIds((current) => e.target.checked
+                              ? [...current, evt.id]
+                              : current.filter((id) => id !== evt.id));
                           }}
                           className="accent-[#C5A15A]"
                         />
@@ -454,6 +531,9 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
                       </label>
                     );
                   })}
+                  {activeEvents.length === 0 && (
+                    <p className="text-xs text-amber-200/80">Create or restore an active event before adding a guest.</p>
+                  )}
                 </div>
               </div>
 
@@ -473,17 +553,20 @@ export function GuestManager({ initialGuests, events }: GuestManagerProps) {
               <div className="flex justify-end gap-2 pt-4 border-t border-[#C5A15A]/20">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setEditingGuestId(null);
+                  }}
                   className="px-4 py-2 rounded-lg border border-white/20 text-xs text-[#E6D2A0]/80 hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || selectedEventIds.length === 0}
                   className="px-5 py-2 rounded-lg bg-gradient-to-r from-[#580F25] to-[#3A0715] border border-[#C5A15A] text-xs font-royal font-semibold text-[#E6D2A0] shadow hover:shadow-[0_0_15px_rgba(197,161,90,0.3)] disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Generating...' : 'Save & Generate Token'}
+                  {isSubmitting ? 'Saving…' : editingGuestId ? 'Save guest changes' : 'Save & Generate Token'}
                 </button>
               </div>
             </form>

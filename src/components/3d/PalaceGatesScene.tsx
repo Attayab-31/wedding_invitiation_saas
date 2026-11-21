@@ -462,6 +462,9 @@ function PalaceDoor({ hinge, isOpen, onEnter }: {
 
 function EventArch({ event, index }: { event: InvitationEvent; index: number }) {
   const palette = EVENT_PALETTES[event.event_type] ?? EVENT_PALETTES.custom;
+  const accentColor = event.theme_color && /^#[\da-f]{6}$/i.test(event.theme_color)
+    ? event.theme_color
+    : palette.accent;
   const archCurve = useMemo(() => {
     const points = Array.from({ length: 25 }, (_, pointIndex) => {
       const angle = Math.PI - (Math.PI * pointIndex) / 24;
@@ -483,12 +486,12 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
       </mesh>
       <mesh position={[0, 0.02, 0]} castShadow>
         <boxGeometry args={[0.8, 0.16, 0.9]} />
-        <meshStandardMaterial color={palette.accent} metalness={0.5} roughness={0.38} />
+        <meshStandardMaterial color={accentColor} metalness={0.5} roughness={0.38} />
       </mesh>
       <mesh position={[0, 0.16, 0]}>
         <tubeGeometry args={[archCurve, 64, 0.2, 10, false]} />
         <meshStandardMaterial
-          color={palette.accent}
+          color={accentColor}
           emissive={palette.light}
           emissiveIntensity={0.2}
           metalness={0.56}

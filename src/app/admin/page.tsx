@@ -7,8 +7,10 @@ import {
   Sparkles,
   MessageCircle,
 } from 'lucide-react';
+import { requireAdminPage } from '@/lib/security/admin-auth';
 
 export default async function AdminOverviewPage() {
+  await requireAdminPage();
   const metrics = await DatabaseService.getDashboardMetrics();
   const wedding = await DatabaseService.getDefaultWedding();
 

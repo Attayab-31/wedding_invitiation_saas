@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Clock3, MapPin, Sparkles, X } from 'lucide-react';
+import { CalendarDays, Clock3, MapPin, Sparkles, Users, X } from 'lucide-react';
 import { ResolvedGuestExperience } from '@/types/database';
 import { AudioControl } from './AudioControl';
 import { EventDetailCard } from './scenes/EventDetailCard';
@@ -11,6 +11,7 @@ type InvitationEvent = ResolvedGuestExperience['events'][number];
 interface EventStopProps {
   event: InvitationEvent;
   index: number;
+  showGuestMaxAttendees: boolean;
   onModalVisibilityChange: (isOpen: boolean) => void;
   isAudioMuted: boolean;
   audioUnavailable: boolean;
@@ -50,9 +51,14 @@ function formatEventDate(date: string) {
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
+function getEventAccentColor(color: string | null) {
+  return color && /^#[\da-f]{6}$/i.test(color) ? color : undefined;
+}
+
 export function EventStop({
   event,
   index,
+  showGuestMaxAttendees,
   onModalVisibilityChange,
   isAudioMuted,
   audioUnavailable,
@@ -61,6 +67,7 @@ export function EventStop({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const accent = eventAccents[event.event_type] ?? eventAccents.custom;
+  const eventAccentColor = getEventAccentColor(event.theme_color);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -91,11 +98,20 @@ export function EventStop({
         aria-hidden="true"
         className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.halo} via-transparent to-[#080C16]/65`}
       />
-      <div className={`relative z-10 w-full max-w-xl rounded-[1.75rem] border ${accent.border} bg-[#1D1716]/65 p-5 text-center text-[#F8F1E5] shadow-[0_30px_90px_rgba(0,0,0,.58)] ring-1 ring-white/5 backdrop-blur-md sm:p-8`}>
-        <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border ${accent.border} bg-[#251A17]/85 shadow-[0_0_30px_rgba(211,174,103,.18)]`}>
+      <div
+        style={eventAccentColor ? { borderColor: eventAccentColor } : undefined}
+        className={`relative z-10 w-full max-w-xl rounded-[1.75rem] border ${accent.border} bg-[#1D1716]/65 p-5 text-center text-[#F8F1E5] shadow-[0_30px_90px_rgba(0,0,0,.58)] ring-1 ring-white/5 backdrop-blur-md sm:p-8`}
+      >
+        <div
+          style={eventAccentColor ? { borderColor: eventAccentColor } : undefined}
+          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border ${accent.border} bg-[#251A17]/85 shadow-[0_0_30px_rgba(211,174,103,.18)]`}
+        >
           <Sparkles aria-hidden="true" className={`h-5 w-5 ${accent.label}`} />
         </div>
-        <p className={`font-royal text-[10px] font-semibold uppercase tracking-[0.3em] ${accent.label}`}>
+        <p
+          style={eventAccentColor ? { color: eventAccentColor } : undefined}
+          className={`font-royal text-[10px] font-semibold uppercase tracking-[0.3em] ${accent.label}`}
+        >
           Celebration {String(index + 1).padStart(2, '0')}
         </p>
         <h2
@@ -107,6 +123,12 @@ export function EventStop({
         {event.description && (
           <p className="mx-auto mt-3 max-w-xl font-serif text-sm italic leading-relaxed text-[#E4D9C6]/85 sm:text-base">
             {event.description}
+          </p>
+        )}
+        {showGuestMaxAttendees && event.guest_max_attendees !== null && (
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D8B66D]/30 bg-black/20 px-3 py-1.5 font-serif text-xs text-[#F0E7D8]">
+            <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B66D]" />
+            Invited for up to {event.guest_max_attendees} {event.guest_max_attendees === 1 ? 'guest' : 'guests'}
           </p>
         )}
 

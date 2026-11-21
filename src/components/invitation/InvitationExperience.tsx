@@ -213,6 +213,7 @@ function InvitationJourney({ experience }: InvitationExperienceProps) {
               <EventStop
                 event={event}
                 index={index}
+                showGuestMaxAttendees={wedding.show_guest_max_attendees}
                 onModalVisibilityChange={setLocked}
                 isAudioMuted={isAudioMuted}
                 audioUnavailable={audioUnavailable}
