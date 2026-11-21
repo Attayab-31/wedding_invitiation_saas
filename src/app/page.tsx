@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { DatabaseService } from '@/lib/data/db-service';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const wedding = await DatabaseService.getDefaultWedding();
 
