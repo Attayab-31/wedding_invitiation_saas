@@ -179,7 +179,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
   const archCurve = useMemo(() => {
     const points = Array.from({ length: 25 }, (_, pointIndex) => {
       const angle = Math.PI - (Math.PI * pointIndex) / 24;
-      return new THREE.Vector3(2.15 * Math.cos(angle), 3.55 + 1.05 * Math.sin(angle), 0);
+      return new THREE.Vector3(2.15 * Math.cos(angle), 2.9 + 0.65 * Math.sin(angle), 0);
     });
     return new THREE.CatmullRomCurve3(points);
   }, []);
@@ -188,11 +188,11 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
   return (
     <group position={[0, 0, archZ]}>
       <mesh position={[-2.15, 1.55, 0]} castShadow>
-        <cylinderGeometry args={[0.26, 0.38, 3.2, 12]} />
+        <cylinderGeometry args={[0.26, 0.38, 2.9, 12]} />
         <meshStandardMaterial color={palette.stone} roughness={0.76} />
       </mesh>
       <mesh position={[2.15, 1.55, 0]} castShadow>
-        <cylinderGeometry args={[0.26, 0.38, 3.2, 12]} />
+        <cylinderGeometry args={[0.26, 0.38, 2.9, 12]} />
         <meshStandardMaterial color={palette.stone} roughness={0.76} />
       </mesh>
       <mesh position={[0, 0.02, 0]} castShadow>
@@ -212,7 +212,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
       {[-1.45, -0.75, 0, 0.75, 1.45].map((x, flowerIndex) => (
         <mesh
           key={x}
-          position={[x, 3.55 + 1.05 * Math.sqrt(Math.max(0, 1 - (x * x) / (2.15 * 2.15))), 0.11]}
+          position={[x, 2.9 + 0.65 * Math.sqrt(Math.max(0, 1 - (x * x) / (2.15 * 2.15))), 0.11]}
           rotation={[0, 0, flowerIndex % 2 ? 0.3 : -0.3]}
         >
           <dodecahedronGeometry args={[0.14, 0]} />
@@ -226,7 +226,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
       ))}
       <FlickeringLantern position={[-2.5, 2.65, 0.18]} scale={0.62} color={palette.light} />
       <FlickeringLantern position={[2.5, 2.65, 0.18]} scale={0.62} color={palette.light} />
-      <pointLight position={[0, 3.3, 1.2]} color={palette.light} intensity={1.8} distance={10} />
+      <pointLight position={[0, 2.9, 1.2]} color={palette.light} intensity={1.8} distance={10} />
     </group>
   );
 }
