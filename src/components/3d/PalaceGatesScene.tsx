@@ -12,7 +12,9 @@ type InvitationEvent = ResolvedGuestExperience['events'][number];
 interface PalaceGatesSceneProps {
   isOpen: boolean;
   onEnter: () => void;
+  coupleMonogram: string;
   events: InvitationEvent[];
+  guestName: string;
   isFinaleVisible: boolean;
   progressRef: React.RefObject<number>;
 }
@@ -22,6 +24,13 @@ interface EventPalette {
   accent: string;
   light: string;
   flower: string;
+}
+
+interface WelcomePlaqueMaterialState {
+  material: THREE.Material;
+  opacity: number;
+  transparent: boolean;
+  depthWrite: boolean;
 }
 
 const EVENT_PALETTES: Record<string, EventPalette> = {
@@ -35,6 +44,191 @@ const courtyardColumns = Array.from({ length: 10 }, (_, index) => {
   const z = -7 - index * 6;
   return [-1, 1].map((side) => ({ x: side * 3.8, z, side }));
 }).flat();
+
+function createCanvasTexture(
+  width: number,
+  height: number,
+  draw: (context: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void,
+  label: string
+) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    console.error(`Could not create the ${label} artwork for the invitation plaque.`);
+    return null;
+  }
+
+  draw(context, canvas);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function getCanvasFont(variable: string, fallback: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || fallback;
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function createPlaqueGreetingTexture(guestName: string) {
+  return createCanvasTexture(2048, 1792, (context, canvas) => {
+    const parchment = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    parchment.addColorStop(0, '#E7D9B8');
+    parchment.addColorStop(0.52, '#F0E7D1');
+    parchment.addColorStop(1, '#DFCEAA');
+    context.fillStyle = parchment;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.strokeStyle = 'rgba(126, 91, 42, 0.3)';
+    context.lineWidth = 5;
+    context.strokeRect(52, 52, canvas.width - 104, canvas.height - 104);
+    context.strokeStyle = 'rgba(255, 247, 222, 0.55)';
+    context.lineWidth = 3;
+    context.strokeRect(68, 68, canvas.width - 136, canvas.height - 136);
+
+    const pill = { x: 150, y: 712, width: 1748, height: 368, radius: 184 };
+    drawRoundedRect(context, pill.x, pill.y, pill.width, pill.height, pill.radius);
+    context.shadowColor = 'rgba(61, 43, 22, 0.32)';
+    context.shadowBlur = 28;
+    context.shadowOffsetY = 12;
+    context.fillStyle = '#4B4033';
+    context.fill();
+    context.shadowColor = 'transparent';
+    context.shadowBlur = 0;
+    context.shadowOffsetY = 0;
+    context.strokeStyle = 'rgba(215, 187, 127, 0.82)';
+    context.lineWidth = 7;
+    context.stroke();
+
+    const text = `Warmly welcoming ${guestName.trim() || 'Honoured Guest'}`;
+    const fontFamily = getCanvasFont('--font-cormorant', 'Georgia');
+    let fontSize = 116;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = `italic ${fontSize}px ${fontFamily}, Georgia, serif`;
+    while (context.measureText(text).width > pill.width - 150 && fontSize > 54) {
+      fontSize -= 2;
+      context.font = `italic ${fontSize}px ${fontFamily}, Georgia, serif`;
+    }
+
+    const centerX = canvas.width / 2;
+    const centerY = pill.y + pill.height / 2;
+    context.fillStyle = 'rgba(255, 243, 211, 0.52)';
+    context.fillText(text, centerX - 2, centerY - 3, pill.width - 150);
+    context.fillStyle = 'rgba(30, 22, 16, 0.86)';
+    context.fillText(text, centerX + 2, centerY + 3, pill.width - 150);
+    context.fillStyle = '#DCC99A';
+    context.fillText(text, centerX, centerY, pill.width - 150);
+  }, 'guest greeting');
+}
+
+function createMonogramTexture(monogram: string) {
+  return createCanvasTexture(512, 512, (context, canvas) => {
+    const fontFamily = getCanvasFont('--font-cinzel', 'Georgia');
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = `700 112px ${fontFamily}, Georgia, serif`;
+    context.fillStyle = 'rgba(255, 240, 197, 0.55)';
+    context.fillText(monogram, canvas.width / 2 - 2, canvas.height / 2 - 3, 440);
+    context.fillStyle = 'rgba(25, 17, 12, 0.86)';
+    context.fillText(monogram, canvas.width / 2 + 2, canvas.height / 2 + 3, 440);
+    context.fillStyle = '#E8CE8D';
+    context.fillText(monogram, canvas.width / 2, canvas.height / 2, 440);
+  }, 'couple monogram');
+}
+
+function EngravedWelcomePlaque({
+  coupleMonogram,
+  guestName,
+}: {
+  coupleMonogram: string;
+  guestName: string;
+}) {
+  const greetingMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const monogramMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  useEffect(() => {
+    const greetingTexture = createPlaqueGreetingTexture(guestName);
+    const monogramTexture = createMonogramTexture(coupleMonogram);
+    const greetingMaterial = greetingMaterialRef.current;
+    const monogramMaterial = monogramMaterialRef.current;
+    if (greetingTexture && greetingMaterial) {
+      greetingMaterial.map = greetingTexture;
+      greetingMaterial.needsUpdate = true;
+    }
+    if (monogramTexture && monogramMaterial) {
+      monogramMaterial.map = monogramTexture;
+      monogramMaterial.needsUpdate = true;
+    }
+
+    return () => {
+      if (greetingMaterial?.map === greetingTexture) {
+        greetingMaterial.map = null;
+        greetingMaterial.needsUpdate = true;
+      }
+      if (monogramMaterial?.map === monogramTexture) {
+        monogramMaterial.map = null;
+        monogramMaterial.needsUpdate = true;
+      }
+      greetingTexture?.dispose();
+      monogramTexture?.dispose();
+    };
+  }, [coupleMonogram, guestName]);
+
+  return (
+    <>
+      <mesh position={[0, 0, 0.222]}>
+        <planeGeometry args={[4.1, 3.61]} />
+        <meshStandardMaterial ref={greetingMaterialRef} roughness={0.58} metalness={0.02} />
+      </mesh>
+      <group position={[0, 2.08, 0.245]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.43, 0.43, 0.1, 48]} />
+          <meshStandardMaterial color="#35271D" roughness={0.48} metalness={0.18} />
+        </mesh>
+        <mesh position={[0, 0, 0.054]}>
+          <torusGeometry args={[0.43, 0.027, 10, 48]} />
+          <meshStandardMaterial color="#D8B66D" metalness={0.84} roughness={0.24} />
+        </mesh>
+        <mesh position={[0, 0, 0.057]}>
+          <torusGeometry args={[0.365, 0.008, 8, 48]} />
+          <meshStandardMaterial color="#B98D45" metalness={0.78} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0, 0.062]}>
+          <planeGeometry args={[0.68, 0.68]} />
+          <meshBasicMaterial
+            ref={monogramMaterialRef}
+            transparent
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      </group>
+    </>
+  );
+}
 
 function FlickeringLantern({
   position,
@@ -381,7 +575,9 @@ function LanternFinale({
 export function PalaceGatesScene({
   isOpen,
   onEnter,
+  coupleMonogram,
   events,
+  guestName,
   isFinaleVisible,
   progressRef,
 }: PalaceGatesSceneProps) {
@@ -399,7 +595,7 @@ export function PalaceGatesScene({
   const fogRef = useRef<THREE.Fog>(null);
   const directionalLightRef = useRef<THREE.DirectionalLight>(null);
   const welcomePlaqueRef = useRef<THREE.Group>(null);
-  const welcomePlaqueMaterialsRef = useRef<THREE.Material[]>([]);
+  const welcomePlaqueMaterialsRef = useRef<WelcomePlaqueMaterialState[]>([]);
   const scrollStops = events.length * 2 + 3;
   const introProgress = 1 / scrollStops;
   const firstEventProgress = 2 / scrollStops;
@@ -422,19 +618,25 @@ export function PalaceGatesScene({
     const plaque = welcomePlaqueRef.current;
     if (!plaque) return;
 
-    const materials: THREE.Material[] = [];
+    const materials: WelcomePlaqueMaterialState[] = [];
     plaque.traverse((object) => {
       if (object instanceof THREE.Mesh) {
-        materials.push(...(Array.isArray(object.material) ? object.material : [object.material]));
+        const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.push(...meshMaterials.map((material) => ({
+          material,
+          opacity: material.opacity,
+          transparent: material.transparent,
+          depthWrite: material.depthWrite,
+        })));
       }
     });
     welcomePlaqueMaterialsRef.current = materials;
 
     return () => {
-      materials.forEach((material) => {
-        material.transparent = false;
-        material.depthWrite = true;
-        material.opacity = 1;
+      materials.forEach(({ material, opacity, transparent, depthWrite }) => {
+        material.transparent = transparent;
+        material.depthWrite = depthWrite;
+        material.opacity = opacity;
         material.needsUpdate = true;
       });
       welcomePlaqueMaterialsRef.current = [];
@@ -444,15 +646,18 @@ export function PalaceGatesScene({
   useFrame((_, delta) => {
     const progress = progressRef.current;
     const plaqueOpacity = 1 - THREE.MathUtils.smoothstep(progress, introProgress, firstEventProgress);
+    const isFading = plaqueOpacity < 1;
     if (welcomePlaqueRef.current) welcomePlaqueRef.current.visible = plaqueOpacity > 0.001;
-    welcomePlaqueMaterialsRef.current.forEach((material) => {
-      const transparent = plaqueOpacity < 1;
-      if (material.transparent !== transparent) {
+    welcomePlaqueMaterialsRef.current.forEach((state) => {
+      const { material } = state;
+      const transparent = isFading || state.transparent;
+      const depthWrite = isFading ? false : state.depthWrite;
+      if (material.transparent !== transparent || material.depthWrite !== depthWrite) {
         material.transparent = transparent;
-        material.depthWrite = !transparent;
+        material.depthWrite = depthWrite;
         material.needsUpdate = true;
       }
-      material.opacity = plaqueOpacity;
+      material.opacity = state.opacity * plaqueOpacity;
     });
 
     const palette = progress < 0.32
@@ -583,7 +788,7 @@ export function PalaceGatesScene({
         <FlickeringLantern position={[-2.72, 2.72, 0.2]} />
         <FlickeringLantern position={[2.72, 2.72, 0.2]} />
 
-        <group ref={welcomePlaqueRef} position={[0, 1.25, -10]}>
+        <group ref={welcomePlaqueRef} position={[0, 1.25, -5.5]}>
           <mesh castShadow>
             <boxGeometry args={[4.7, 4.2, 0.22]} />
             <meshStandardMaterial color="#6C4A2B" roughness={0.56} metalness={0.16} />
@@ -606,6 +811,10 @@ export function PalaceGatesScene({
             <boxGeometry args={[4.1, 3.61, 0.035]} />
             <meshStandardMaterial color="#EDE3CB" roughness={0.5} />
           </mesh>
+          <EngravedWelcomePlaque
+            coupleMonogram={coupleMonogram}
+            guestName={guestName}
+          />
         </group>
 
         {events.map((event, index) => (

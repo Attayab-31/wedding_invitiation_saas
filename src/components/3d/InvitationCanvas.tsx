@@ -12,7 +12,9 @@ interface InvitationCanvasProps {
   isOpen: boolean;
   onOpen: () => void;
   onGateOpenComplete: () => void;
+  coupleMonogram: string;
   events: ResolvedGuestExperience['events'];
+  guestName: string;
   isScrollUnlocked: boolean;
   isFinaleVisible: boolean;
   scrollTargetRef: React.RefObject<HTMLElement | null>;
@@ -141,7 +143,9 @@ export function InvitationCanvas({
   isOpen,
   onOpen,
   onGateOpenComplete,
+  coupleMonogram,
   events,
+  guestName,
   isScrollUnlocked,
   isFinaleVisible,
   scrollTargetRef,
@@ -173,7 +177,9 @@ export function InvitationCanvas({
             <PalaceGatesScene
               isOpen={isOpen}
               onEnter={onOpen}
+              coupleMonogram={coupleMonogram}
               events={events}
+              guestName={guestName}
               isFinaleVisible={isFinaleVisible}
               progressRef={progressRef}
             />

@@ -123,7 +123,9 @@ function InvitationJourney({ experience }: InvitationExperienceProps) {
             isOpen={isOpen}
             onOpen={handleEnter}
             onGateOpenComplete={unlockScroll}
+            coupleMonogram={getMonogram(wedding.couple_names)}
             events={events}
+            guestName={guest.display_name}
             isScrollUnlocked={isScrollUnlocked}
             isFinaleVisible={isFinaleVisible}
             scrollTargetRef={journeyRef}
@@ -143,19 +145,13 @@ function InvitationJourney({ experience }: InvitationExperienceProps) {
             className="relative flex min-h-dvh flex-col items-center px-5 pb-[10dvh] pt-[clamp(7.5rem,16vh,10rem)] text-center"
           >
             <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#100D10]/10 via-transparent to-[#100D10]/40" />
-            <div className="relative flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#E1C47E]/75 bg-[#251912]/75 font-royal text-sm font-bold tracking-widest text-[#F0D68E] shadow-[0_0_30px_rgba(219,170,82,.24)] backdrop-blur-md">
-                {getMonogram(wedding.couple_names)}
-              </div>
-              <p className="mt-4 rounded-full border border-[#E1C47E]/55 bg-[#201711]/75 px-5 py-2 font-serif text-sm italic text-[#F4E9D3] shadow-lg backdrop-blur-md sm:text-base">
-                Warmly welcoming {guest.display_name}
-              </p>
-            </div>
-
             <div className="pointer-events-auto absolute bottom-[8%] flex flex-col items-center">
               <h1 id="entrance-heading" className="sr-only">
                 The wedding of {wedding.couple_names}
               </h1>
+              <p className="sr-only">
+                {getMonogram(wedding.couple_names)}. Warmly welcoming {guest.display_name}.
+              </p>
               {!isOpen ? (
                 <button
                   type="button"
