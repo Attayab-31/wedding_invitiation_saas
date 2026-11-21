@@ -628,7 +628,15 @@ export class DatabaseService {
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle();
-      if (error) throw new Error('Unable to load wedding settings.');
+      if (error) {
+        console.error('Supabase wedding settings query failed.', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error('Unable to load wedding settings.');
+      }
       if (!data) throw new Error('No wedding has been configured.');
       return data;
     }
