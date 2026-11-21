@@ -183,7 +183,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
     });
     return new THREE.CatmullRomCurve3(points);
   }, []);
-  const archZ = -16 - index * 6;
+  const archZ = -15 - index * 6;
 
   return (
     <group position={[0, 0, archZ]}>
@@ -204,7 +204,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
         <meshStandardMaterial
           color={palette.accent}
           emissive={palette.light}
-          emissiveIntensity={0.12}
+          emissiveIntensity={0.2}
           metalness={0.56}
           roughness={0.34}
         />
@@ -226,7 +226,7 @@ function EventArch({ event, index }: { event: InvitationEvent; index: number }) 
       ))}
       <FlickeringLantern position={[-2.5, 2.65, 0.18]} scale={0.62} color={palette.light} />
       <FlickeringLantern position={[2.5, 2.65, 0.18]} scale={0.62} color={palette.light} />
-      <pointLight position={[0, 3.3, 1.2]} color={palette.light} intensity={1.3} distance={9} />
+      <pointLight position={[0, 3.3, 1.2]} color={palette.light} intensity={1.8} distance={10} />
     </group>
   );
 }

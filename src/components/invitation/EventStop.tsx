@@ -89,9 +89,9 @@ export function EventStop({
     >
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.halo} via-transparent to-[#080C16]/75`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.halo} via-transparent to-[#080C16]/65`}
       />
-      <div className={`relative w-full max-w-2xl rounded-[1.75rem] border ${accent.border} bg-[#1D1716]/85 p-5 text-center text-[#F8F1E5] shadow-[0_30px_90px_rgba(0,0,0,.42)] backdrop-blur-xl sm:p-8`}>
+      <div className={`relative z-10 w-full max-w-xl rounded-[1.75rem] border ${accent.border} bg-[#1D1716]/72 p-5 text-center text-[#F8F1E5] shadow-[0_30px_90px_rgba(0,0,0,.58)] ring-1 ring-white/5 backdrop-blur-md sm:p-8`}>
         <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border ${accent.border} bg-[#251A17]/85 shadow-[0_0_30px_rgba(211,174,103,.18)]`}>
           <Sparkles aria-hidden="true" className={`h-5 w-5 ${accent.label}`} />
         </div>
