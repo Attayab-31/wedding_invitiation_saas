@@ -398,6 +398,10 @@ export function PalaceGatesScene({
   const targetBackground = useMemo(() => new THREE.Color(), []);
   const fogRef = useRef<THREE.Fog>(null);
   const directionalLightRef = useRef<THREE.DirectionalLight>(null);
+  const welcomePlaqueRef = useRef<THREE.Group>(null);
+  const welcomePlaqueMaterialsRef = useRef<THREE.Material[]>([]);
+  const introProgress = 1 / (events.length + 3);
+  const firstEventProgress = 2 / (events.length + 3);
   const archCurve = useMemo(() => {
     const points = Array.from({ length: 25 }, (_, index) => {
       const angle = Math.PI - (Math.PI * index) / 24;
@@ -413,8 +417,43 @@ export function PalaceGatesScene({
     return new THREE.CatmullRomCurve3(points);
   }, []);
 
+  useEffect(() => {
+    const plaque = welcomePlaqueRef.current;
+    if (!plaque) return;
+
+    const materials: THREE.Material[] = [];
+    plaque.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        materials.push(...(Array.isArray(object.material) ? object.material : [object.material]));
+      }
+    });
+    welcomePlaqueMaterialsRef.current = materials;
+
+    return () => {
+      materials.forEach((material) => {
+        material.transparent = false;
+        material.depthWrite = true;
+        material.opacity = 1;
+        material.needsUpdate = true;
+      });
+      welcomePlaqueMaterialsRef.current = [];
+    };
+  }, []);
+
   useFrame((_, delta) => {
     const progress = progressRef.current;
+    const plaqueOpacity = 1 - THREE.MathUtils.smoothstep(progress, introProgress, firstEventProgress);
+    if (welcomePlaqueRef.current) welcomePlaqueRef.current.visible = plaqueOpacity > 0.001;
+    welcomePlaqueMaterialsRef.current.forEach((material) => {
+      const transparent = plaqueOpacity < 1;
+      if (material.transparent !== transparent) {
+        material.transparent = transparent;
+        material.depthWrite = !transparent;
+        material.needsUpdate = true;
+      }
+      material.opacity = plaqueOpacity;
+    });
+
     const palette = progress < 0.32
       ? { background: '#201711', fog: '#332315', light: '#FFE7C2', intensity: 1.9 }
       : progress < 0.72
@@ -543,7 +582,7 @@ export function PalaceGatesScene({
         <FlickeringLantern position={[-2.72, 2.72, 0.2]} />
         <FlickeringLantern position={[2.72, 2.72, 0.2]} />
 
-        <group position={[0, 1.25, -10]}>
+        <group ref={welcomePlaqueRef} position={[0, 1.25, -10]}>
           <mesh castShadow>
             <boxGeometry args={[4.7, 4.2, 0.22]} />
             <meshStandardMaterial color="#6C4A2B" roughness={0.56} metalness={0.16} />
