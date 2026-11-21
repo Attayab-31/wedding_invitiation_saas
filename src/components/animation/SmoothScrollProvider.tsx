@@ -19,6 +19,7 @@ interface SmoothScrollContextValue {
 }
 
 const SmoothScrollContext = createContext<SmoothScrollContextValue | null>(null);
+const TOUCH_STAGE_SWIPE_THRESHOLD = 20;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -92,7 +93,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const lenis = lenisRef.current;
     if (lenis) {
       lenis.scrollTo(target, {
-        duration: 1.15,
+        duration: 0.9,
         lock: true,
         onComplete: finishNavigation,
       });
@@ -202,7 +203,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
 
       if (event.type === 'touchend' && touchNavigationRef.current) {
         if (event.cancelable) event.preventDefault();
-        if (Math.abs(touchDistanceRef.current) >= 40) {
+        if (Math.abs(touchDistanceRef.current) >= TOUCH_STAGE_SWIPE_THRESHOLD) {
           navigateStage(touchDirectionRef.current);
         }
         touchNavigationRef.current = false;
