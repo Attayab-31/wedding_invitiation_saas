@@ -24,7 +24,7 @@ function getAdminAuthConfig(): AdminAuthConfig | null {
 
   if (
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    password.length < 20 ||
+    password.length < 8 ||
     sessionSecret.length < 32
   ) {
     return null;
@@ -149,5 +149,5 @@ export const adminSessionCookie = {
 };
 
 export function getAdminAuthSetupError() {
-  return 'Admin access is not configured. Set ADMIN_EMAIL, ADMIN_PASSWORD (20+ characters), and ADMIN_SESSION_SECRET (32+ characters) on the server.';
+  return 'Admin access is not configured. Set ADMIN_EMAIL, ADMIN_PASSWORD (8+ characters), and ADMIN_SESSION_SECRET (32+ characters) on the server.';
 }
