@@ -71,27 +71,6 @@ function getCanvasFont(variable: string, fallback: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || fallback;
 }
 
-function drawRoundedRect(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
-) {
-  context.beginPath();
-  context.moveTo(x + radius, y);
-  context.lineTo(x + width - radius, y);
-  context.quadraticCurveTo(x + width, y, x + width, y + radius);
-  context.lineTo(x + width, y + height - radius);
-  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  context.lineTo(x + radius, y + height);
-  context.quadraticCurveTo(x, y + height, x, y + height - radius);
-  context.lineTo(x, y + radius);
-  context.quadraticCurveTo(x, y, x + radius, y);
-  context.closePath();
-}
-
 function createPlaqueGreetingTexture(guestName: string) {
   return createCanvasTexture(2048, 1792, (context, canvas) => {
     const parchment = context.createLinearGradient(0, 0, canvas.width, canvas.height);
@@ -108,39 +87,57 @@ function createPlaqueGreetingTexture(guestName: string) {
     context.lineWidth = 3;
     context.strokeRect(68, 68, canvas.width - 136, canvas.height - 136);
 
-    const pill = { x: 150, y: 712, width: 1748, height: 368, radius: 184 };
-    drawRoundedRect(context, pill.x, pill.y, pill.width, pill.height, pill.radius);
-    context.shadowColor = 'rgba(61, 43, 22, 0.32)';
-    context.shadowBlur = 28;
-    context.shadowOffsetY = 12;
-    context.fillStyle = '#4B4033';
-    context.fill();
-    context.shadowColor = 'transparent';
-    context.shadowBlur = 0;
-    context.shadowOffsetY = 0;
-    context.strokeStyle = 'rgba(215, 187, 127, 0.82)';
-    context.lineWidth = 7;
-    context.stroke();
-
-    const text = `Warmly welcoming ${guestName.trim() || 'Honoured Guest'}`;
-    const fontFamily = getCanvasFont('--font-cormorant', 'Georgia');
-    let fontSize = 116;
+    const centerX = canvas.width / 2;
+    const name = guestName.trim() || 'Honoured Guest';
+    const scriptFont = getCanvasFont('--font-script', 'cursive');
+    let welcomeFontSize = 166;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = `italic ${fontSize}px ${fontFamily}, Georgia, serif`;
-    while (context.measureText(text).width > pill.width - 150 && fontSize > 54) {
-      fontSize -= 2;
-      context.font = `italic ${fontSize}px ${fontFamily}, Georgia, serif`;
+    context.font = `400 ${welcomeFontSize}px ${scriptFont}, cursive`;
+    while (context.measureText('Warmly welcoming').width > 1620 && welcomeFontSize > 104) {
+      welcomeFontSize -= 2;
+      context.font = `400 ${welcomeFontSize}px ${scriptFont}, cursive`;
     }
 
-    const centerX = canvas.width / 2;
-    const centerY = pill.y + pill.height / 2;
-    context.fillStyle = 'rgba(255, 243, 211, 0.52)';
-    context.fillText(text, centerX - 2, centerY - 3, pill.width - 150);
-    context.fillStyle = 'rgba(30, 22, 16, 0.86)';
-    context.fillText(text, centerX + 2, centerY + 3, pill.width - 150);
-    context.fillStyle = '#DCC99A';
-    context.fillText(text, centerX, centerY, pill.width - 150);
+    const serifFont = getCanvasFont('--font-cormorant', 'Georgia');
+    let nameFontSize = 150;
+    context.font = `600 ${nameFontSize}px ${serifFont}, Georgia, serif`;
+    while (context.measureText(name).width > 1640 && nameFontSize > 78) {
+      nameFontSize -= 2;
+      context.font = `600 ${nameFontSize}px ${serifFont}, Georgia, serif`;
+    }
+
+    const drawEngravedText = (text: string, y: number) => {
+      context.fillStyle = 'rgba(255, 248, 226, 0.72)';
+      context.fillText(text, centerX - 2, y - 3, 1680);
+      context.fillStyle = 'rgba(78, 56, 28, 0.7)';
+      context.fillText(text, centerX + 2, y + 3, 1680);
+      context.fillStyle = '#80633A';
+      context.fillText(text, centerX, y, 1680);
+    };
+
+    context.font = `400 ${welcomeFontSize}px ${scriptFont}, cursive`;
+    drawEngravedText('Warmly welcoming', 720);
+
+    context.strokeStyle = 'rgba(133, 101, 52, 0.62)';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.moveTo(590, 900);
+    context.lineTo(950, 900);
+    context.moveTo(1098, 900);
+    context.lineTo(1458, 900);
+    context.stroke();
+    context.fillStyle = '#9B7B47';
+    context.beginPath();
+    context.moveTo(centerX, 883);
+    context.lineTo(centerX + 17, 900);
+    context.lineTo(centerX, 917);
+    context.lineTo(centerX - 17, 900);
+    context.closePath();
+    context.fill();
+
+    context.font = `600 ${nameFontSize}px ${serifFont}, Georgia, serif`;
+    drawEngravedText(name, 1080);
   }, 'guest greeting');
 }
 
